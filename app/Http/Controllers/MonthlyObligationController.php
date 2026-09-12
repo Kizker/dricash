@@ -27,16 +27,7 @@ class MonthlyObligationController extends Controller
         $year = $request->filled('year') ? (int) $request->input('year') : (int) $now->format('Y');
 
         $metrics = $this->wealthService->getDashboardMetrics($user, $month, $year);
-
-        $categories = Category::where(function ($q) use ($user) {
-            $q->whereNull('user_id')->orWhere('user_id', $user->id);
-        })->get()->map(fn ($cat) => [
-            'id' => $cat->id,
-            'name' => $cat->name,
-            'type' => $cat->type,
-            'icon' => $cat->icon,
-            'color' => $cat->color,
-        ]);
+        $categories = $this->wealthService->getActiveCategories($user);
 
         $obligations = MonthlyObligation::with(['category'])
             ->where('user_id', $user->id)

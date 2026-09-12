@@ -21,6 +21,23 @@ class Category extends Model
         'is_default',
     ];
 
+    protected static function booted(): void
+    {
+        static::saved(function (Category $category) {
+            \App\Services\WealthPlannerService::clearCategoryCache($category->user_id);
+            if ($category->user_id) {
+                \App\Services\WealthPlannerService::clearUserCache($category->user_id);
+            }
+        });
+
+        static::deleted(function (Category $category) {
+            \App\Services\WealthPlannerService::clearCategoryCache($category->user_id);
+            if ($category->user_id) {
+                \App\Services\WealthPlannerService::clearUserCache($category->user_id);
+            }
+        });
+    }
+
     protected function casts(): array
     {
         return [

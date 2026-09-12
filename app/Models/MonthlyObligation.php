@@ -22,6 +22,17 @@ class MonthlyObligation extends Model
         'notes',
     ];
 
+    protected static function booted(): void
+    {
+        static::saved(function (MonthlyObligation $obligation) {
+            \App\Services\WealthPlannerService::clearUserCache($obligation->user_id);
+        });
+
+        static::deleted(function (MonthlyObligation $obligation) {
+            \App\Services\WealthPlannerService::clearUserCache($obligation->user_id);
+        });
+    }
+
     protected function casts(): array
     {
         return [

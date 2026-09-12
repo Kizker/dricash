@@ -23,6 +23,17 @@ class Transaction extends Model
         'is_growth_overridden',
     ];
 
+    protected static function booted(): void
+    {
+        static::saved(function (Transaction $transaction) {
+            \App\Services\WealthPlannerService::clearUserCache($transaction->user_id);
+        });
+
+        static::deleted(function (Transaction $transaction) {
+            \App\Services\WealthPlannerService::clearUserCache($transaction->user_id);
+        });
+    }
+
     protected function casts(): array
     {
         return [

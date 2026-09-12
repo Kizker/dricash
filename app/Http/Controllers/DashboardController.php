@@ -21,17 +21,7 @@ class DashboardController extends Controller
         $year = $request->filled('year') ? (int) $request->input('year') : null;
 
         $metrics = $this->wealthService->getDashboardMetrics($user, $month, $year);
-
-        // Fetch active categories for Quick Entry dropdowns
-        $categories = Category::where(function ($q) use ($user) {
-            $q->whereNull('user_id')->orWhere('user_id', $user->id);
-        })->get()->map(fn ($cat) => [
-            'id' => $cat->id,
-            'name' => $cat->name,
-            'type' => $cat->type,
-            'icon' => $cat->icon,
-            'color' => $cat->color,
-        ]);
+        $categories = $this->wealthService->getActiveCategories($user);
 
         return Inertia::render('Dashboard', [
             'metrics' => $metrics,

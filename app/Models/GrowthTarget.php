@@ -20,6 +20,17 @@ class GrowthTarget extends Model
         'notes',
     ];
 
+    protected static function booted(): void
+    {
+        static::saved(function (GrowthTarget $target) {
+            \App\Services\WealthPlannerService::clearUserCache($target->user_id);
+        });
+
+        static::deleted(function (GrowthTarget $target) {
+            \App\Services\WealthPlannerService::clearUserCache($target->user_id);
+        });
+    }
+
     protected function casts(): array
     {
         return [

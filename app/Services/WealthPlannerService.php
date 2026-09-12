@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Models\Category;
 use App\Models\GrowthTarget;
 use App\Models\MonthlyObligation;
 use App\Models\MonthlyObligationPayment;
@@ -9,18 +10,76 @@ use App\Models\Transaction;
 use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Cache;
 
 class WealthPlannerService
 {
     /**
-     * Get complete financial metrics and state for the given user and period.
+     * Get complete financial metrics and state for the given user and period with caching.
      */
-    public function getDashboardMetrics(User $user, ?int $month = null, ?int $year = null): array
+    public function getDashboardMetrics(User $user, ?int $month = null, ?int $year = null, bool $useCache = true): array
     {
         $now = Carbon::now();
         $month = $month ?? (int) $now->format('m');
         $year = $year ?? (int) $now->format('Y');
 
+        if (!$useCache) {
+            return $this->computeDashboardMetrics($user, $month, $year);
+        }
+
+        $version = Cache::get("user_{$user->id}_wealth_ver", 1);
+        $cacheKey = "wealth_metrics_u{$user->id}_v{$version}_{$year}_{$month}";
+
+        return Cache::remember($cacheKey, 600, function () use ($user, $month, $year) {
+            return $this->computeDashboardMetrics($user, $month, $year);
+        });
+    }
+
+    /**
+     * Invalidate cached metrics for a user.
+     */
+    public static function clearUserCache(int $userId): void
+    {
+        Cache::increment("user_{$userId}_wealth_ver");
+    }
+
+    /**
+     * Get active categories for user with high-performance cache.
+     */
+    public function getActiveCategories(User $user): Collection
+    {
+        $version = Cache::get("user_{$user->id}_cat_ver", 1);
+        $cacheKey = "user_{$user->id}_categories_v{$version}";
+
+        return Cache::remember($cacheKey, 3600, function () use ($user) {
+            return Category::where(function ($q) use ($user) {
+                $q->whereNull('user_id')->orWhere('user_id', $user->id);
+            })->get()->map(fn ($cat) => [
+                'id' => $cat->id,
+                'name' => $cat->name,
+                'type' => $cat->type,
+                'icon' => $cat->icon,
+                'color' => $cat->color,
+            ]);
+        });
+    }
+
+    /**
+     * Invalidate cached categories.
+     */
+    public static function clearCategoryCache(?int $userId = null): void
+    {
+        if ($userId) {
+            Cache::increment("user_{$userId}_cat_ver");
+        }
+    }
+
+    /**
+     * Compute financial metrics using consolidated single-query data processing.
+     */
+    public function computeDashboardMetrics(User $user, int $month, int $year): array
+    {
+        $now = Carbon::now();
         $startDate = Carbon::createFromDate($year, $month, 1)->startOfDay();
         $endDate = $startDate->copy()->endOfMonth()->endOfDay();
         
@@ -30,16 +89,22 @@ class WealthPlannerService
         $todayDateStr = $isCurrentMonth ? $now->format('Y-m-d') : $startDate->copy()->day($todayDay)->format('Y-m-d');
         $daysRemaining = max(1, $daysInMonth - $todayDay + 1);
 
-        // 1. Income Metrics
-        $totalIncome = (float) Transaction::where('user_id', $user->id)
-            ->where('type', 'income')
+        // 1. Single Indexed Fetch for ALL Month Transactions with Relations
+        $monthTransactions = Transaction::with(['category', 'monthlyObligation'])
+            ->where('user_id', $user->id)
             ->whereBetween('transaction_date', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')])
+            ->get();
+
+        // Income Metrics (calculated in-memory)
+        $totalIncome = (float) $monthTransactions
+            ->where('type', 'income')
             ->sum('amount');
 
         // 2. Monthly Obligations & Ring-Fencing
         $activeObligations = MonthlyObligation::with(['category'])
             ->where('user_id', $user->id)
             ->where('is_active', true)
+            ->orderBy('due_day', 'asc')
             ->get();
 
         $totalObligationsAmount = (float) $activeObligations->sum('amount');
@@ -85,25 +150,27 @@ class WealthPlannerService
         $calculatedGrowthAmount = ($startingNetWorth > 0) ? ($startingNetWorth * ($targetGrowthPercentage / 100)) : 0;
         $targetSavingsAmount = (float) ($growthTarget?->target_savings_amount > 0 ? $growthTarget->target_savings_amount : $calculatedGrowthAmount);
 
-        // 4. Daily Expenses (Excluding obligations)
-        $pastExpenses = (float) Transaction::where('user_id', $user->id)
-            ->where('type', 'expense')
-            ->whereNull('monthly_obligation_id')
-            ->where('transaction_date', '>=', $startDate->format('Y-m-d'))
-            ->where('transaction_date', '<', $todayDateStr)
-            ->sum('amount');
+        // 4. Daily Expenses (Excluding obligations) calculated in-memory from $monthTransactions
+        $pastExpenses = 0.0;
+        $spentToday = 0.0;
+        $totalDailyExpensesThisMonth = 0.0;
 
-        $spentToday = (float) Transaction::where('user_id', $user->id)
-            ->where('type', 'expense')
-            ->whereNull('monthly_obligation_id')
-            ->whereDate('transaction_date', $todayDateStr)
-            ->sum('amount');
+        foreach ($monthTransactions as $tx) {
+            if ($tx->type === 'expense' && is_null($tx->monthly_obligation_id)) {
+                $txDateStr = $tx->transaction_date instanceof Carbon
+                    ? $tx->transaction_date->format('Y-m-d')
+                    : (string) $tx->transaction_date;
 
-        $totalDailyExpensesThisMonth = (float) Transaction::where('user_id', $user->id)
-            ->where('type', 'expense')
-            ->whereNull('monthly_obligation_id')
-            ->whereBetween('transaction_date', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')])
-            ->sum('amount');
+                $amt = (float) $tx->amount;
+                $totalDailyExpensesThisMonth += $amt;
+
+                if ($txDateStr < $todayDateStr) {
+                    $pastExpenses += $amt;
+                } elseif ($txDateStr === $todayDateStr) {
+                    $spentToday += $amt;
+                }
+            }
+        }
 
         // Total all expenses (Daily + Paid Obligations)
         $totalAllExpenses = $totalDailyExpensesThisMonth + $totalPaidObligations;
@@ -136,7 +203,7 @@ class WealthPlannerService
 
         $isGrowthOnTrack = ($projectedGrowthPercentage >= $targetGrowthPercentage);
 
-        // 7. Recent Transactions (last 10)
+        // 7. Recent Transactions (last 10 indexed fetch)
         $recentTransactions = Transaction::with(['category', 'monthlyObligation'])
             ->where('user_id', $user->id)
             ->orderBy('transaction_date', 'desc')
@@ -145,9 +212,16 @@ class WealthPlannerService
             ->get()
             ->map(fn ($tx) => $this->formatTransaction($tx));
 
-        // 8. Visual Charts Data
-        $growthChart = $this->generateGrowthChartData($user, $startDate, $endDate, $todayDay, $startingNetWorth, $targetGrowthPercentage, $targetSavingsAmount);
-        $categoryBreakdown = $this->generateCategoryBreakdown($user, $startDate, $endDate);
+        // 8. Visual Charts Data (O(1) in-memory aggregation without duplicate queries)
+        $growthChart = $this->generateGrowthChartData(
+            $startDate, 
+            $daysInMonth, 
+            $todayDay, 
+            $startingNetWorth, 
+            $targetSavingsAmount, 
+            $monthTransactions
+        );
+        $categoryBreakdown = $this->generateCategoryBreakdown($monthTransactions);
 
         return [
             'period' => [
@@ -243,25 +317,37 @@ class WealthPlannerService
     }
 
     /**
-     * Generate daily cumulative net worth curve data for Chart.js.
+     * Generate daily cumulative net worth curve data using O(1) hashmap lookup.
      */
     private function generateGrowthChartData(
-        User $user, 
         Carbon $startDate, 
-        Carbon $endDate, 
+        int $daysInMonth,
         int $todayDay, 
         float $startingNetWorth, 
-        float $targetPercentage, 
-        float $targetSavingsAmount
+        float $targetSavingsAmount,
+        Collection $monthTransactions
     ): array {
-        $daysInMonth = $startDate->daysInMonth;
         $labels = [];
         $actualNetWorth = [];
         $targetTrend = [];
 
-        $monthTransactions = Transaction::where('user_id', $user->id)
-            ->whereBetween('transaction_date', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')])
-            ->get();
+        // Single-pass hashmap: aggregate income & expense by date string in O(N)
+        $dailyDeltas = [];
+        foreach ($monthTransactions as $tx) {
+            $d = $tx->transaction_date instanceof Carbon 
+                ? $tx->transaction_date->format('Y-m-d') 
+                : (string) $tx->transaction_date;
+            
+            if (!isset($dailyDeltas[$d])) {
+                $dailyDeltas[$d] = 0.0;
+            }
+
+            if ($tx->type === 'income') {
+                $dailyDeltas[$d] += (float) $tx->amount;
+            } elseif ($tx->type === 'expense') {
+                $dailyDeltas[$d] -= (float) $tx->amount;
+            }
+        }
 
         $runningNetWorth = $startingNetWorth;
         $targetPerDay = $targetSavingsAmount / max(1, $daysInMonth);
@@ -273,17 +359,7 @@ class WealthPlannerService
             $targetTrend[] = round($startingNetWorth + ($targetPerDay * $day), 0);
 
             if ($day <= $todayDay) {
-                $dayIncome = $monthTransactions
-                    ->where('transaction_date', $currentDateStr)
-                    ->where('type', 'income')
-                    ->sum('amount');
-
-                $dayExpense = $monthTransactions
-                    ->where('transaction_date', $currentDateStr)
-                    ->where('type', 'expense')
-                    ->sum('amount');
-
-                $runningNetWorth += ($dayIncome - $dayExpense);
+                $runningNetWorth += ($dailyDeltas[$currentDateStr] ?? 0.0);
                 $actualNetWorth[] = round($runningNetWorth, 0);
             } else {
                 $actualNetWorth[] = null;
@@ -298,21 +374,17 @@ class WealthPlannerService
     }
 
     /**
-     * Generate category distribution breakdown for Pie/Doughnut charts.
+     * Generate category distribution breakdown from already-loaded month transactions (Zero DB queries).
      */
-    private function generateCategoryBreakdown(User $user, Carbon $startDate, Carbon $endDate): array
+    private function generateCategoryBreakdown(Collection $monthTransactions): array
     {
-        $expenses = Transaction::with(['category'])
-            ->where('user_id', $user->id)
-            ->where('type', 'expense')
-            ->whereBetween('transaction_date', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')])
-            ->get();
+        $expenses = $monthTransactions->where('type', 'expense');
 
         $grouped = $expenses->groupBy(function ($tx) {
             return $tx->category?->name ?? 'Lain-lain';
         });
 
-        $totalExpense = $expenses->sum('amount');
+        $totalExpense = (float) $expenses->sum('amount');
         $data = [];
 
         foreach ($grouped as $catName => $txList) {
@@ -331,7 +403,7 @@ class WealthPlannerService
         usort($data, fn ($a, $b) => $b['amount'] <=> $a['amount']);
 
         return [
-            'total' => (float) $totalExpense,
+            'total' => $totalExpense,
             'items' => $data,
         ];
     }

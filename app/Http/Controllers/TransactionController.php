@@ -51,13 +51,14 @@ class TransactionController extends Controller
             $query->where('transaction_date', '<=', $request->input('date_to'));
         }
 
-        // Default to current month if no dates are provided
+        // Default to current month if no dates are provided (SARGable range seek)
         if (!$request->filled('date_from') && !$request->filled('date_to') && !$request->filled('search')) {
             $now = Carbon::now();
-            $month = $request->input('month', (int) $now->format('m'));
-            $year = $request->input('year', (int) $now->format('Y'));
-            $query->whereMonth('transaction_date', $month)
-                  ->whereYear('transaction_date', $year);
+            $month = (int) $request->input('month', (int) $now->format('m'));
+            $year = (int) $request->input('year', (int) $now->format('Y'));
+            $startOfMonth = Carbon::createFromDate($year, $month, 1)->startOfDay()->format('Y-m-d');
+            $endOfMonth = Carbon::createFromDate($year, $month, 1)->endOfMonth()->endOfDay()->format('Y-m-d');
+            $query->whereBetween('transaction_date', [$startOfMonth, $endOfMonth]);
         }
 
         $transactions = $query->orderBy('transaction_date', 'desc')
@@ -66,15 +67,7 @@ class TransactionController extends Controller
             ->withQueryString()
             ->through(fn ($tx) => $this->wealthService->formatTransaction($tx));
 
-        $categories = Category::where(function ($q) use ($user) {
-            $q->whereNull('user_id')->orWhere('user_id', $user->id);
-        })->get()->map(fn ($cat) => [
-            'id' => $cat->id,
-            'name' => $cat->name,
-            'type' => $cat->type,
-            'icon' => $cat->icon,
-            'color' => $cat->color,
-        ]);
+        $categories = $this->wealthService->getActiveCategories($user);
 
         return Inertia::render('Transactions/Index', [
             'transactions' => $transactions,
