@@ -37,7 +37,13 @@ else
     echo "⚠️ npm tidak terdeteksi, melewati tahap kompilasi frontend lokal di server."
 fi
 
-# 6. Optimasi & Bersihkan Cache Laravel
+# 6. Symlink Storage (Menggunakan native ln -s tanpa php exec)
+if [ ! -L public/storage ]; then
+    rm -rf public/storage
+    ln -s ../storage/app/public public/storage 2>/dev/null || true
+fi
+
+# 7. Optimasi & Bersihkan Cache Laravel
 echo "🧹 Mengoptimasi cache Laravel..."
 php artisan optimize:clear
 php artisan config:cache
