@@ -1,0 +1,697 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Panduan Deployment & Pembaruan Dricash</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    @page {
+      size: A4 portrait;
+      margin: 8mm 12mm 8mm 12mm;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      color: #1e293b;
+      background-color: #ffffff;
+      line-height: 1.4;
+      font-size: 11.5px;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .page {
+      page-break-after: always;
+      height: calc(100vh - 16mm);
+      max-height: 275mm;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      overflow: hidden;
+    }
+
+    .page:last-child {
+      page-break-after: avoid;
+    }
+
+    /* Top Metadata Bar */
+    .doc-topbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 9px;
+      color: #64748b;
+      border-bottom: 1px solid #f1f5f9;
+      padding-bottom: 4px;
+      margin-bottom: 8px;
+    }
+
+    /* Header Section */
+    .header-section {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 10px;
+      padding-bottom: 8px;
+      border-bottom: 1.5px solid #e2e8f0;
+    }
+
+    .header-left h1 {
+      font-size: 20px;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      color: #0f172a;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .header-left h1 span.logo-text {
+      color: #0f172a;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .header-left h1 span.logo-accent {
+      color: #059669;
+    }
+
+    .badge-prod {
+      display: inline-block;
+      font-size: 10px;
+      font-weight: 700;
+      padding: 2px 8px;
+      background: #ecfdf5;
+      color: #047857;
+      border: 1px solid #a7f3d0;
+      border-radius: 9999px;
+      letter-spacing: 0.02em;
+    }
+
+    .header-subtitle {
+      font-size: 11.5px;
+      color: #475569;
+      margin-top: 3px;
+      font-weight: 500;
+    }
+
+    .header-right {
+      text-align: right;
+      font-size: 10px;
+      color: #64748b;
+      line-height: 1.4;
+    }
+
+    .header-right strong {
+      color: #0f172a;
+    }
+
+    /* Metrics Grid */
+    .metrics-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 6px;
+      margin-bottom: 10px;
+    }
+
+    .metric-card {
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 6px;
+      padding: 6px 10px;
+    }
+
+    .metric-label {
+      font-size: 8.5px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: #2563eb;
+      margin-bottom: 2px;
+    }
+
+    .metric-value {
+      font-size: 10px;
+      font-weight: 600;
+      color: #0f172a;
+      font-family: 'JetBrains Mono', monospace;
+      word-break: break-all;
+    }
+
+    /* Section Headings */
+    .section-title {
+      font-size: 13px;
+      font-weight: 700;
+      color: #0f172a;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin: 8px 0 5px 0;
+      position: relative;
+    }
+
+    .section-title::before {
+      content: "";
+      display: inline-block;
+      width: 3.5px;
+      height: 14px;
+      background: #2563eb;
+      border-radius: 2px;
+    }
+
+    .section-desc {
+      font-size: 11px;
+      color: #475569;
+      margin-bottom: 6px;
+    }
+
+    /* Steps */
+    .step-card {
+      border: 1px solid #e2e8f0;
+      border-radius: 7px;
+      padding: 7px 9px;
+      margin-bottom: 7px;
+      background: #ffffff;
+    }
+
+    .step-header {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 11.5px;
+      font-weight: 700;
+      color: #0f172a;
+      margin-bottom: 5px;
+    }
+
+    .step-badge {
+      width: 18px;
+      height: 18px;
+      background: #2563eb;
+      color: #ffffff;
+      border-radius: 9999px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 10px;
+      font-weight: 800;
+    }
+
+    /* Terminal Code Block */
+    .terminal-box {
+      background: #0f172a;
+      color: #f8fafc;
+      border-radius: 6px;
+      padding: 6px 10px;
+      font-family: 'JetBrains Mono', ui-monospace, monospace;
+      font-size: 10px;
+      line-height: 1.42;
+      overflow-x: auto;
+    }
+
+    .terminal-box .comment {
+      color: #94a3b8;
+    }
+
+    .terminal-box .cmd {
+      color: #38bdf8;
+    }
+
+    .terminal-box .flag {
+      color: #a7f3d0;
+    }
+
+    /* Callout Note */
+    .callout {
+      border-radius: 6px;
+      padding: 6px 9px;
+      font-size: 10.5px;
+      margin-top: 5px;
+      display: flex;
+      gap: 6px;
+      align-items: flex-start;
+      line-height: 1.38;
+    }
+
+    .callout-success {
+      background: #f0fdf4;
+      border: 1px solid #bbf7d0;
+      color: #166534;
+    }
+
+    .callout-info {
+      background: #eff6ff;
+      border: 1px solid #bfdbfe;
+      color: #1e40af;
+    }
+
+    /* Table Styles */
+    .table-container {
+      border: 1px solid #e2e8f0;
+      border-radius: 7px;
+      overflow: hidden;
+      margin-bottom: 8px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 10.5px;
+    }
+
+    th {
+      background: #f8fafc;
+      color: #475569;
+      font-weight: 700;
+      text-align: left;
+      padding: 5px 9px;
+      border-bottom: 1px solid #e2e8f0;
+      font-size: 10px;
+    }
+
+    td {
+      padding: 5px 9px;
+      border-bottom: 1px solid #f1f5f9;
+      color: #334155;
+      vertical-align: middle;
+    }
+
+    tr:last-child td {
+      border-bottom: none;
+    }
+
+    .badge-tag {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 9.5px;
+      background: #f1f5f9;
+      padding: 1px 5px;
+      border-radius: 3px;
+      color: #0f172a;
+      border: 1px solid #e2e8f0;
+    }
+
+    /* Footer */
+    .doc-footer {
+      border-top: 1px solid #f1f5f9;
+      padding-top: 5px;
+      font-size: 9px;
+      color: #94a3b8;
+      text-align: center;
+      margin-top: auto;
+    }
+
+    .alert-card {
+      border-radius: 6px;
+      padding: 7px 10px;
+      margin-bottom: 6px;
+      font-size: 10.8px;
+      line-height: 1.4;
+    }
+
+    .alert-card strong {
+      display: block;
+      margin-bottom: 2px;
+      font-size: 11.2px;
+    }
+
+    .alert-yellow {
+      background: #fefce8;
+      border: 1px solid #fef08a;
+      color: #713f12;
+    }
+
+    .alert-red {
+      background: #fef2f2;
+      border: 1px solid #fecaca;
+      color: #991b1b;
+    }
+
+    .alert-blue {
+      background: #eff6ff;
+      border: 1px solid #bfdbfe;
+      color: #1e40af;
+    }
+
+    .alert-purple {
+      background: #faf5ff;
+      border: 1px solid #e9d5ff;
+      color: #6b21a8;
+    }
+
+    @media print {
+      body {
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+      }
+      .page {
+        page-break-after: always;
+        height: 100vh;
+      }
+      .page:last-child {
+        page-break-after: avoid;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ==================== HALAMAN 1 ==================== -->
+  <div class="page">
+    <div class="content-body">
+      <div class="doc-topbar">
+        <span>Panduan Deployment & Pembaruan Dricash</span>
+        <span>Dokumentasi Operasional Server Hostinger</span>
+      </div>
+
+      <div class="header-section">
+        <div class="header-left">
+          <h1>
+            <span class="logo-text">DRICASH <span class="logo-accent">PLANNER</span></span>
+            <span class="badge-prod">Production Guide</span>
+          </h1>
+          <div class="header-subtitle">
+            SOP Deployment, LiteSpeed/Apache & Pembaruan Otomatis ke Server Hostinger
+          </div>
+        </div>
+        <div class="header-right">
+          <div>Versi: <strong>1.0 (Laravel 11 + Vue 3 Inertia)</strong></div>
+          <div>Terakhir Diperbarui: <strong>September 2026</strong></div>
+        </div>
+      </div>
+
+      <!-- 6 Metrics Grid -->
+      <div class="metrics-grid">
+        <div class="metric-card">
+          <div class="metric-label">AKSES SSH SERVER</div>
+          <div class="metric-value">ssh -p 65002 u141095167@46.202.138.88</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-label">DIREKTORI WEB TARGET</div>
+          <div class="metric-value">~/domains/dricash.andrichadhea.my.id/public_html</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-label">REPOSITORY GITHUB</div>
+          <div class="metric-value">https://github.com/Kizker/dricash.git</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-label">DOMAIN UTAMA</div>
+          <div class="metric-value">https://dricash.andrichadhea.my.id</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-label">STACK ENGINE</div>
+          <div class="metric-value">Laravel 11 + Vue 3 Inertia + Vite</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-label">DATABASE ENGINE</div>
+          <div class="metric-value">MySQL (u141095167_dricash)</div>
+        </div>
+      </div>
+
+      <!-- Section 1 -->
+      <div class="section-title">1. Alur Kerja Rutin Saat Ada Pembaruan (Workflow Cepat)</div>
+      <div class="section-desc">
+        Setiap kali Anda selesai mengubah kode di komputer lokal dan ingin menerapkannya ke website live, ikuti 2 tahap mudah berikut:
+      </div>
+
+      <!-- Step A -->
+      <div class="step-card">
+        <div class="step-header">
+          <span class="step-badge">A</span>
+          <span>Di Komputer Lokal (Mac / PC): Commit & Push ke GitHub</span>
+        </div>
+        <div class="terminal-box">
+          <span class="comment"># 1. Pastikan seluruh perubahan kode lokal di-commit dan push ke GitHub</span><br>
+          <span class="cmd">git add .</span><br>
+          <span class="cmd">git commit -m</span> <span class="flag">"Update fitur atau perbaikan terbaru"</span><br>
+          <span class="cmd">git push origin main</span>
+        </div>
+      </div>
+
+      <!-- Step B -->
+      <div class="step-card">
+        <div class="step-header">
+          <span class="step-badge">B</span>
+          <span>Di Server Hostinger: Terapkan Pembaruan (1 Baris Perintah)</span>
+        </div>
+        <div class="terminal-box">
+          <span class="comment"># 1. Login SSH ke Server Hostinger</span><br>
+          <span class="cmd">ssh -p 65002 u141095167@46.202.138.88</span><br><br>
+          <span class="comment"># 2. Masuk ke direktori domain & jalankan deploy script</span><br>
+          <span class="cmd">cd ~/domains/dricash.andrichadhea.my.id/public_html</span><br>
+          <span class="cmd">bash deploy.sh</span>
+        </div>
+        <div class="callout callout-success">
+          <span>💡</span>
+          <div>
+            Perintah <strong>bash deploy.sh</strong> otomatis menarik kode terbaru dari GitHub, menginstal dependensi Composer, mem-build aset frontend Vite, mengeksekusi migrasi database MySQL, dan membersihkan cache aplikasi Laravel secara aman.
+          </div>
+        </div>
+      </div>
+
+      <!-- Section 2 -->
+      <div class="section-title">2. Prosedur Pembaruan Manual (Jika Tanpa Script)</div>
+      <div class="step-card" style="margin-bottom: 0;">
+        <div class="terminal-box">
+          <span class="comment"># Masuk ke direktori server</span><br>
+          <span class="cmd">cd ~/domains/dricash.andrichadhea.my.id/public_html</span><br><br>
+          <span class="comment"># Ambil update terbaru dari GitHub</span><br>
+          <span class="cmd">git fetch origin main && git reset --hard origin/main && git pull origin main</span><br><br>
+          <span class="comment"># Install dependensi PHP & jalankan migrasi database</span><br>
+          <span class="cmd">composer install --no-dev --prefer-dist --optimize-autoloader</span><br>
+          <span class="cmd">php artisan migrate --force</span><br><br>
+          <span class="comment"># Build aset frontend Vite (Inertia.js & CSS) & optimasi cache</span><br>
+          <span class="cmd">npm install --production=false && npm run build</span><br>
+          <span class="cmd">php artisan optimize:clear && php artisan config:cache && php artisan route:cache && php artisan view:cache</span><br><br>
+          <span class="comment"># Atur perizinan folder storage & web server</span><br>
+          <span class="cmd">chmod -R 775 storage bootstrap/cache && chmod 644 .htaccess</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="doc-footer">
+      Dokumen ini digenerate secara otomatis untuk dokumentasi operasional Dricash (dricash.andrichadhea.my.id) &bull; Halaman 1 dari 3
+    </div>
+  </div>
+
+  <!-- ==================== HALAMAN 2 ==================== -->
+  <div class="page">
+    <div class="content-body">
+      <div class="doc-topbar">
+        <span>Panduan Deployment & Pembaruan Dricash</span>
+        <span>Setup Awal & Arsitektur Layanan</span>
+      </div>
+
+      <!-- Section 3 -->
+      <div class="section-title">3. Setup Awal / Pemulihan Server (Fresh Installation)</div>
+      <div class="section-desc">
+        Jika direktori di server masih kosong atau Anda ingin melakukan instalasi ulang dari nol:
+      </div>
+
+      <!-- Substep 1 -->
+      <div class="step-card">
+        <div class="step-header">
+          <span class="step-badge">1</span>
+          <span>Kloning & Sinkronisasi Kode dari GitHub</span>
+        </div>
+        <div class="terminal-box">
+          <span class="comment"># Buat dan masuk ke direktori domain di server</span><br>
+          <span class="cmd">mkdir -p ~/domains/dricash.andrichadhea.my.id/public_html</span><br>
+          <span class="cmd">cd ~/domains/dricash.andrichadhea.my.id/public_html</span><br><br>
+          <span class="comment"># Inisialisasi git dan tautkan ke repository GitHub</span><br>
+          <span class="cmd">git init</span><br>
+          <span class="cmd">git remote remove origin 2>/dev/null || true</span><br>
+          <span class="cmd">git remote add origin https://github.com/Kizker/dricash.git</span><br>
+          <span class="cmd">git fetch origin main && git reset --hard origin/main && git pull origin main</span><br><br>
+          <span class="comment"># Bersihkan berkas default bawaan hosting jika ada</span><br>
+          <span class="cmd">rm -f default.php index.php.bak</span>
+        </div>
+      </div>
+
+      <!-- Substep 2 -->
+      <div class="step-card">
+        <div class="step-header">
+          <span class="step-badge">2</span>
+          <span>Konfigurasi Environment (.env.production) & Deploy Script</span>
+        </div>
+        <div class="terminal-box">
+          <span class="comment"># Salin template konfigurasi production ke .env</span><br>
+          <span class="cmd">cp .env.production .env</span><br><br>
+          <span class="comment"># Berikan izin eksekusi script dan jalankan deployment</span><br>
+          <span class="cmd">chmod +x deploy.sh</span><br>
+          <span class="cmd">bash deploy.sh</span>
+        </div>
+        <div class="callout callout-info">
+          <span>ℹ️</span>
+          <div>
+            File <strong>.env.production</strong> telah terkonfigurasi dengan kredensial database Hostinger MySQL (<code>u141095167_dricash</code>) dan domain production <code>https://dricash.andrichadhea.my.id</code>. Script <code>deploy.sh</code> akan otomatis menjalankan migrasi skema tabel awal.
+          </div>
+        </div>
+      </div>
+
+      <!-- Section 4 -->
+      <div class="section-title">4. Arsitektur Layanan & Komponen Dricash</div>
+      <div class="section-desc">
+        Aplikasi Dricash beroperasi menggunakan arsitektur monolitik modern decoupled (Inertia.js Single Page Application):
+      </div>
+
+      <div class="table-container">
+        <table>
+          <thead>
+            <tr>
+              <th style="width: 22%;">Layer / Komponen</th>
+              <th style="width: 23%;">Service Engine</th>
+              <th style="width: 22%;">Direktori Sumber</th>
+              <th style="width: 33%;">Peran & Tanggung Jawab</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>Frontend SPA</strong></td>
+              <td>Vue 3 + Tailwind CSS</td>
+              <td><span class="badge-tag">resources/js/</span></td>
+              <td>Antarmuka responsif (Beranda, Mutasi, Kewajiban, Kekayaan, Laporan, Admin).</td>
+            </tr>
+            <tr>
+              <td><strong>Inertia Adapter</strong></td>
+              <td>@inertiajs/vue3 v2</td>
+              <td><span class="badge-tag">app/Http/Middleware/</span></td>
+              <td>Protokol SPA tanpa API REST terpisah, transisi halaman instan tanpa full reload.</td>
+            </tr>
+            <tr>
+              <td><strong>Backend Core</strong></td>
+              <td>Laravel 11 (PHP 8.2+)</td>
+              <td><span class="badge-tag">app/Http/Controllers/</span></td>
+              <td>Logika alokasi kekayaan, ring-fencing, otentikasi sesi, dan intervensi budget.</td>
+            </tr>
+            <tr>
+              <td><strong>Database Cloud</strong></td>
+              <td>MySQL Hostinger</td>
+              <td><span class="badge-tag">database/migrations/</span></td>
+              <td>Penyimpanan persisten transaksi, kategori master, target saving, dan data user.</td>
+            </tr>
+            <tr>
+              <td><strong>Web Server Proxy</strong></td>
+              <td>LiteSpeed / Apache</td>
+              <td><span class="badge-tag">public_html/.htaccess</span></td>
+              <td>Routing otomatis seluruh request HTTP/HTTPS ke <code>public/index.php</code>.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Quick Tips Box -->
+      <div class="step-card" style="margin-bottom: 0;">
+        <div class="step-header">
+          <span style="font-size: 13px;">⚡</span>
+          <span>Perintah Singkat Pasca-Pembaruan Logic PHP Sederhana (Tanpa Migrasi/Aset Baru)</span>
+        </div>
+        <div class="terminal-box">
+          <span class="cmd">git pull origin main && php artisan optimize:clear && php artisan config:cache</span>
+        </div>
+        <div class="callout callout-success" style="margin-top: 5px;">
+          <span>🚀</span>
+          <div>
+            Kompilasi aset frontend menggunakan Vite menghasilkan bundle produksi yang sangat ringkas (~260KB gzipped), memangkas waktu muat halaman awal hingga di bawah 1 detik pada browser klien.
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="doc-footer">
+      Dokumen ini digenerate secara otomatis untuk dokumentasi operasional Dricash (dricash.andrichadhea.my.id) &bull; Halaman 2 dari 3
+    </div>
+  </div>
+
+  <!-- ==================== HALAMAN 3 ==================== -->
+  <div class="page">
+    <div class="content-body">
+      <div class="doc-topbar">
+        <span>Panduan Deployment & Pembaruan Dricash</span>
+        <span>Konfigurasi Web Server & Pemecahan Masalah</span>
+      </div>
+
+      <!-- Section 5 -->
+      <div class="section-title">5. Konfigurasi Web Server (.htaccess & Hostinger LiteSpeed)</div>
+      <div class="section-desc">
+        Meneruskan seluruh trafik HTTPS domain <code>dricash.andrichadhea.my.id</code> ke front-controller Laravel (<code>public/index.php</code>):
+      </div>
+
+      <div class="step-card">
+        <div class="step-header">
+          <span>A. Hostinger / Apache / LiteSpeed (File <code>.htaccess</code> di Root <code>public_html</code>):</span>
+        </div>
+        <div class="terminal-box">
+          &lt;IfModule mod_rewrite.c&gt;<br>
+          &nbsp;&nbsp;&nbsp;&nbsp;RewriteEngine On<br><br>
+          &nbsp;&nbsp;&nbsp;&nbsp;<span class="comment"># 1. Paksa penggunaan koneksi aman HTTPS</span><br>
+          &nbsp;&nbsp;&nbsp;&nbsp;RewriteCond %{HTTPS} off<br>
+          &nbsp;&nbsp;&nbsp;&nbsp;RewriteRule ^(.*)$ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]<br><br>
+          &nbsp;&nbsp;&nbsp;&nbsp;<span class="comment"># 2. Teruskan seluruh request publik ke dalam direktori /public</span><br>
+          &nbsp;&nbsp;&nbsp;&nbsp;RewriteCond %{REQUEST_URI} !^/public/<br>
+          &nbsp;&nbsp;&nbsp;&nbsp;RewriteRule ^(.*)$ public/$1 [L]<br>
+          &lt;/IfModule&gt;
+        </div>
+      </div>
+
+      <div class="step-card">
+        <div class="step-header">
+          <span>B. VPS Nginx Native (Opsional - Jika Menggunakan Server VPS Dedicated):</span>
+        </div>
+        <div class="terminal-box">
+          server {<br>
+          &nbsp;&nbsp;&nbsp;&nbsp;listen 80; listen 443 ssl http2;<br>
+          &nbsp;&nbsp;&nbsp;&nbsp;server_name dricash.andrichadhea.my.id;<br>
+          &nbsp;&nbsp;&nbsp;&nbsp;root /home/u141095167/domains/dricash.andrichadhea.my.id/public_html/public;<br>
+          &nbsp;&nbsp;&nbsp;&nbsp;index index.php index.html;<br><br>
+          &nbsp;&nbsp;&nbsp;&nbsp;location / {<br>
+          &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;try_files $uri $uri/ /index.php?$query_string;<br>
+          &nbsp;&nbsp;&nbsp;&nbsp;}<br><br>
+          &nbsp;&nbsp;&nbsp;&nbsp;location ~ \.php$ {<br>
+          &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;include snippets/fastcgi-php.conf;<br>
+          &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;fastcgi_pass unix:/var/run/php/php8.2-fpm.sock;<br>
+          &nbsp;&nbsp;&nbsp;&nbsp;}<br>
+          }
+        </div>
+      </div>
+
+      <!-- Section 6 -->
+      <div class="section-title">6. Troubleshooting & Tips Penting</div>
+
+      <div class="alert-card alert-red">
+        <strong>⚠️ Error 500 / Internal Server Error (Blank White Page):</strong>
+        Pastikan izin direktori storage dan bootstrap/cache telah diatur ke mode tulis: <code>chmod -R 775 storage bootstrap/cache</code>. Periksa log detail permasalahan melalui file <code>storage/logs/laravel.log</code>.
+      </div>
+
+      <div class="alert-card alert-yellow">
+        <strong>⚠️ Database Access Denied (SQLSTATE[HY000] [1045]):</strong>
+        Periksa konfigurasi <code>DB_DATABASE</code>, <code>DB_USERNAME</code>, dan <code>DB_PASSWORD</code> di file <code>.env</code> apakah sama persis dengan yang ada di panel MySQL Hostinger. Jalankan <code>php artisan config:clear</code> setelah mengedit berkas <code>.env</code>.
+      </div>
+
+      <div class="alert-card alert-blue">
+        <strong>🔄 Tampilan Belum Berubah Setelah Deploy (Browser / Cloudflare Cache):</strong>
+        Lakukan Hard Refresh di browser dengan menekan <code>Ctrl + F5</code> (Windows) atau <code>Cmd + Shift + R</code> (Mac). Jika domain menggunakan Cloudflare Proxy, buka menu <strong>Caching &rarr; Configuration &rarr; Purge Everything</strong>.
+      </div>
+
+      <div class="alert-card alert-purple" style="margin-bottom: 0;">
+        <strong>📑 Akun Admin Bawaan & Hak Akses Panel:</strong>
+        Gunakan kredensial admin default untuk login pertama kali: Email <code>admin@dricash.app</code> dan Password <code>password</code>. Dari dashboard admin, Anda dapat mengaktifkan/menangguhkan user serta menyetel kategori master.
+      </div>
+
+    </div>
+
+    <div class="doc-footer">
+      Dokumen ini digenerate secara otomatis untuk dokumentasi operasional Dricash (dricash.andrichadhea.my.id) &bull; Halaman 3 dari 3
+    </div>
+  </div>
+
+</body>
+</html>

@@ -8,6 +8,7 @@ Temporary Items
 *.swp
 *.swo
 *.pdf
+!Panduan_Deployment_dan_Pembaruan_Dricash.pdf
 scratch/
 .env
 .env.*
