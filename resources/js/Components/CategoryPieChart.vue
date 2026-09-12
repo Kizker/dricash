@@ -95,15 +95,15 @@
 
     <!-- Empty State Container (Aesthetic, Centered, Zero Collision) -->
     <div v-else class="flex-1 flex flex-col items-center justify-center py-6 sm:py-8 text-center px-4">
-      <div class="w-32 h-32 sm:w-36 sm:h-36 rounded-full border-2 border-dashed border-slate-200/90 bg-slate-50/50 flex flex-col items-center justify-center relative mb-3">
-        <div class="w-9 h-9 rounded-xl bg-white shadow-2xs border border-slate-200/70 flex items-center justify-center text-slate-400 mb-1">
-          <PieChart :size="18" class="text-slate-400 stroke-[1.75]" />
-        </div>
-        <span class="text-[9px] uppercase tracking-wider font-bold text-slate-400">
+      <div class="w-36 h-36 min-[360px]:w-40 min-[360px]:h-40 rounded-full border-2 border-dashed border-slate-200/90 bg-slate-50/40 flex flex-col items-center justify-center relative p-3 mb-3">
+        <span class="text-[9px] min-[360px]:text-[10px] uppercase tracking-wider font-bold text-slate-400">
           Total Biaya
         </span>
-        <span class="text-xs sm:text-sm font-black font-sans text-slate-700 tracking-tight mt-0.5">
+        <div class="text-base min-[360px]:text-lg sm:text-xl font-black font-sans text-slate-900 tracking-tight my-0.5">
           Rp 0
+        </div>
+        <span class="text-[9px] min-[360px]:text-[10px] font-medium text-slate-500 bg-white border border-slate-200/70 px-2.5 py-0.5 rounded-full shadow-2xs">
+          Belum ada data
         </span>
       </div>
       <p class="text-xs font-semibold text-slate-700 mb-0.5">
