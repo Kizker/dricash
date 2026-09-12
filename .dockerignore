@@ -1,0 +1,38 @@
+# Git
+.git
+.github
+.gitignore
+
+# Environment & local secrets
+.env
+.env.local
+.env.*.local
+
+# Dependency directories (installed in Docker stages)
+node_modules/
+vendor/
+
+# Build artifacts
+public/build/
+public/hot
+public/storage
+
+# Local logs & framework caches
+storage/*.key
+storage/logs/*.log
+storage/framework/cache/data/*
+storage/framework/sessions/*
+storage/framework/views/*
+database/database.sqlite
+database/*.sqlite*
+
+# OS & temporary files
+.DS_Store
+.AppleDouble
+Thumbs.db
+*.swp
+*.swo
+
+# Project guides & temporary scripts
+scratch/
+*.pdf

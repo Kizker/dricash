@@ -379,11 +379,11 @@
             <span class="badge-prod">Production Guide</span>
           </h1>
           <div class="header-subtitle">
-            SOP Deployment, LiteSpeed/Apache & Pembaruan Otomatis ke Server Hostinger
+            SOP Deployment, Docker Container & Pembaruan Otomatis ke Server Hostinger
           </div>
         </div>
         <div class="header-right">
-          <div>Versi: <strong>1.0 (Laravel 11 + Vue 3 Inertia)</strong></div>
+          <div>Versi: <strong>1.0 (Laravel 11 + Vue 3 Inertia + Docker)</strong></div>
           <div>Terakhir Diperbarui: <strong>September 2026</strong></div>
         </div>
       </div>
@@ -411,8 +411,8 @@
           <div class="metric-value">Laravel 11 + Vue 3 Inertia + Vite</div>
         </div>
         <div class="metric-card">
-          <div class="metric-label">DATABASE ENGINE</div>
-          <div class="metric-value">MySQL (u141095167_dricash)</div>
+          <div class="metric-label">OPSI CONTAINER</div>
+          <div class="metric-value">Docker Multi-Stage & Compose (Port 8000)</div>
         </div>
       </div>
 
@@ -445,14 +445,14 @@
         <div class="terminal-box">
           <span class="comment"># 1. Login SSH ke Server Hostinger</span><br>
           <span class="cmd">ssh -p 65002 u141095167@46.202.138.88</span><br><br>
-          <span class="comment"># 2. Masuk ke direktori domain & jalankan deploy script</span><br>
+          <span class="comment"># 2. Masuk ke direktori domain & jalankan deploy script (Docker atau Native)</span><br>
           <span class="cmd">cd ~/domains/dricash.andrichadhea.my.id/public_html</span><br>
-          <span class="cmd">bash deploy.sh</span>
+          <span class="cmd">bash deploy-docker.sh</span> <span class="comment"># Atau gunakan 'bash deploy.sh' untuk native PHP</span>
         </div>
         <div class="callout callout-success">
           <span>💡</span>
           <div>
-            Perintah <strong>bash deploy.sh</strong> otomatis menarik kode terbaru dari GitHub, menginstal dependensi Composer, mem-build aset frontend Vite, mengeksekusi migrasi database MySQL, dan membersihkan cache aplikasi Laravel secara aman.
+            Perintah <strong>bash deploy-docker.sh</strong> otomatis menarik kode terbaru dari GitHub, memicu build image container Docker (Nginx + PHP-FPM 8.2), mengeksekusi migrasi database MySQL secara aman di dalam container, dan merefresh container tanpa downtime.
           </div>
         </div>
       </div>
@@ -465,14 +465,10 @@
           <span class="cmd">cd ~/domains/dricash.andrichadhea.my.id/public_html</span><br><br>
           <span class="comment"># Ambil update terbaru dari GitHub</span><br>
           <span class="cmd">git fetch origin main && git reset --hard origin/main && git pull origin main</span><br><br>
-          <span class="comment"># Install dependensi PHP & jalankan migrasi database</span><br>
-          <span class="cmd">composer install --no-dev --prefer-dist --optimize-autoloader</span><br>
-          <span class="cmd">php artisan migrate --force</span><br><br>
-          <span class="comment"># Build aset frontend Vite (Inertia.js & CSS) & optimasi cache</span><br>
-          <span class="cmd">npm install --production=false && npm run build</span><br>
-          <span class="cmd">php artisan optimize:clear && php artisan config:cache && php artisan route:cache && php artisan view:cache</span><br><br>
-          <span class="comment"># Atur perizinan folder storage & web server</span><br>
-          <span class="cmd">chmod -R 775 storage bootstrap/cache && chmod 644 .htaccess</span>
+          <span class="comment"># Jalankan orkestrasi container Docker</span><br>
+          <span class="cmd">docker compose up -d --build && docker compose exec -T app php artisan migrate --force</span><br><br>
+          <span class="comment"># Atur perizinan file & reverse proxy</span><br>
+          <span class="cmd">chmod -R 755 . && chmod 644 .htaccess</span>
         </div>
       </div>
     </div>
@@ -487,7 +483,7 @@
     <div class="content-body">
       <div class="doc-topbar">
         <span>Panduan Deployment & Pembaruan Dricash</span>
-        <span>Setup Awal & Arsitektur Layanan</span>
+        <span>Setup Awal & Deployment Docker</span>
       </div>
 
       <!-- Section 3 -->
@@ -520,87 +516,72 @@
       <div class="step-card">
         <div class="step-header">
           <span class="step-badge">2</span>
-          <span>Konfigurasi Environment (.env.production) & Deploy Script</span>
+          <span>Jalankan Deploy Script & Konfigurasi .htaccess</span>
         </div>
         <div class="terminal-box">
-          <span class="comment"># Salin template konfigurasi production ke .env</span><br>
+          <span class="comment"># Salin konfigurasi environment production</span><br>
           <span class="cmd">cp .env.production .env</span><br><br>
-          <span class="comment"># Berikan izin eksekusi script dan jalankan deployment</span><br>
-          <span class="cmd">chmod +x deploy.sh</span><br>
-          <span class="cmd">bash deploy.sh</span>
+          <span class="comment"># Berikan izin eksekusi script dan jalankan container Docker</span><br>
+          <span class="cmd">chmod +x deploy.sh deploy-docker.sh</span><br>
+          <span class="cmd">bash deploy-docker.sh</span>
         </div>
         <div class="callout callout-info">
           <span>ℹ️</span>
           <div>
-            File <strong>.env.production</strong> telah terkonfigurasi dengan kredensial database Hostinger MySQL (<code>u141095167_dricash</code>) dan domain production <code>https://dricash.andrichadhea.my.id</code>. Script <code>deploy.sh</code> akan otomatis menjalankan migrasi skema tabel awal.
+            File <strong>.htaccess</strong> sudah otomatis disediakan di repositori untuk menangani reverse proxy Apache/LiteSpeed menuju container Dricash di port 8000 lengkap dengan dukungan WebSocket dan HTTPS.
           </div>
         </div>
       </div>
 
       <!-- Section 4 -->
-      <div class="section-title">4. Arsitektur Layanan & Komponen Dricash</div>
+      <div class="section-title">4. Deployment Menggunakan Docker (Multi-Container Architecture)</div>
       <div class="section-desc">
-        Aplikasi Dricash beroperasi menggunakan arsitektur monolitik modern decoupled (Inertia.js Single Page Application):
+        Aplikasi ini berjalan dengan container terisolasi yang dihubungkan melalui internal bridge network <code>dricash_net</code>:
       </div>
 
       <div class="table-container">
         <table>
           <thead>
             <tr>
-              <th style="width: 22%;">Layer / Komponen</th>
-              <th style="width: 23%;">Service Engine</th>
-              <th style="width: 22%;">Direktori Sumber</th>
-              <th style="width: 33%;">Peran & Tanggung Jawab</th>
+              <th style="width: 20%;">Container Name</th>
+              <th style="width: 25%;">Service Engine</th>
+              <th style="width: 15%;">Port</th>
+              <th style="width: 40%;">Peran & Tanggung Jawab</th>
             </tr>
           </thead>
           <tbody>
             <tr>
-              <td><strong>Frontend SPA</strong></td>
-              <td>Vue 3 + Tailwind CSS</td>
-              <td><span class="badge-tag">resources/js/</span></td>
-              <td>Antarmuka responsif (Beranda, Mutasi, Kewajiban, Kekayaan, Laporan, Admin).</td>
+              <td><strong>dricash_app</strong></td>
+              <td>Laravel 11 + Nginx (PHP 8.2)</td>
+              <td><span class="badge-tag">8000</span></td>
+              <td>Antarmuka Web SPA (Vue 3 + Inertia), REST API, alokasi kekayaan, dan auth.</td>
             </tr>
             <tr>
-              <td><strong>Inertia Adapter</strong></td>
-              <td>@inertiajs/vue3 v2</td>
-              <td><span class="badge-tag">app/Http/Middleware/</span></td>
-              <td>Protokol SPA tanpa API REST terpisah, transisi halaman instan tanpa full reload.</td>
-            </tr>
-            <tr>
-              <td><strong>Backend Core</strong></td>
-              <td>Laravel 11 (PHP 8.2+)</td>
-              <td><span class="badge-tag">app/Http/Controllers/</span></td>
-              <td>Logika alokasi kekayaan, ring-fencing, otentikasi sesi, dan intervensi budget.</td>
-            </tr>
-            <tr>
-              <td><strong>Database Cloud</strong></td>
-              <td>MySQL Hostinger</td>
-              <td><span class="badge-tag">database/migrations/</span></td>
-              <td>Penyimpanan persisten transaksi, kategori master, target saving, dan data user.</td>
-            </tr>
-            <tr>
-              <td><strong>Web Server Proxy</strong></td>
-              <td>LiteSpeed / Apache</td>
-              <td><span class="badge-tag">public_html/.htaccess</span></td>
-              <td>Routing otomatis seluruh request HTTP/HTTPS ke <code>public/index.php</code>.</td>
+              <td><strong>dricash_db</strong></td>
+              <td>MySQL 8.0 (Opsional)</td>
+              <td><span class="badge-tag">3306</span></td>
+              <td>Penyimpanan mandiri (opsional jika tidak memakai database Cloud Hostinger).</td>
             </tr>
           </tbody>
         </table>
       </div>
 
-      <!-- Quick Tips Box -->
+      <!-- Docker Options -->
       <div class="step-card" style="margin-bottom: 0;">
         <div class="step-header">
-          <span style="font-size: 13px;">⚡</span>
-          <span>Perintah Singkat Pasca-Pembaruan Logic PHP Sederhana (Tanpa Migrasi/Aset Baru)</span>
+          <span style="font-size: 13px;">🐳</span>
+          <span>Opsi A: Jalankan dengan Docker Compose (Direkomendasikan)</span>
         </div>
         <div class="terminal-box">
-          <span class="cmd">git pull origin main && php artisan optimize:clear && php artisan config:cache</span>
+          <span class="comment"># Bangun image dan jalankan container di background</span><br>
+          <span class="cmd">docker compose up -d --build</span><br><br>
+          <span class="comment"># Cek status container & logs streaming</span><br>
+          <span class="cmd">docker compose ps && docker compose logs -f</span>
         </div>
         <div class="callout callout-success" style="margin-top: 5px;">
           <span>🚀</span>
           <div>
-            Kompilasi aset frontend menggunakan Vite menghasilkan bundle produksi yang sangat ringkas (~260KB gzipped), memangkas waktu muat halaman awal hingga di bawah 1 detik pada browser klien.
+            Frontend Vue 3 + Vite dan dependensi Composer dikompilasi menggunakan multi-stage build, menghasilkan image produksi yang mandiri, ringkas, dan berperforma tinggi tanpa membebani memori server.
           </div>
         </div>
       </div>
@@ -620,44 +601,45 @@
       </div>
 
       <!-- Section 5 -->
-      <div class="section-title">5. Konfigurasi Web Server (.htaccess & Hostinger LiteSpeed)</div>
+      <div class="section-title">5. Konfigurasi Reverse Proxy (.htaccess & Nginx)</div>
       <div class="section-desc">
-        Meneruskan seluruh trafik HTTPS domain <code>dricash.andrichadhea.my.id</code> ke front-controller Laravel (<code>public/index.php</code>):
+        Meneruskan seluruh trafik HTTPS domain <code>dricash.andrichadhea.my.id</code> ke container Dricash port 8000:
       </div>
 
       <div class="step-card">
         <div class="step-header">
-          <span>A. Hostinger / Apache / LiteSpeed (File <code>.htaccess</code> di Root <code>public_html</code>):</span>
+          <span>A. Hostinger / Apache / LiteSpeed (via <code>.htaccess</code> di <code>public_html</code>):</span>
         </div>
         <div class="terminal-box">
           &lt;IfModule mod_rewrite.c&gt;<br>
           &nbsp;&nbsp;&nbsp;&nbsp;RewriteEngine On<br><br>
-          &nbsp;&nbsp;&nbsp;&nbsp;<span class="comment"># 1. Paksa penggunaan koneksi aman HTTPS</span><br>
+          &nbsp;&nbsp;&nbsp;&nbsp;<span class="comment"># 1. Paksa penggunaan koneksi HTTPS aman</span><br>
           &nbsp;&nbsp;&nbsp;&nbsp;RewriteCond %{HTTPS} off<br>
           &nbsp;&nbsp;&nbsp;&nbsp;RewriteRule ^(.*)$ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]<br><br>
-          &nbsp;&nbsp;&nbsp;&nbsp;<span class="comment"># 2. Teruskan seluruh request publik ke dalam direktori /public</span><br>
-          &nbsp;&nbsp;&nbsp;&nbsp;RewriteCond %{REQUEST_URI} !^/public/<br>
-          &nbsp;&nbsp;&nbsp;&nbsp;RewriteRule ^(.*)$ public/$1 [L]<br>
+          &nbsp;&nbsp;&nbsp;&nbsp;<span class="comment"># 2. Reverse proxy ke Container Docker Dricash port 8000</span><br>
+          &nbsp;&nbsp;&nbsp;&nbsp;RewriteCond %{REQUEST_FILENAME} !-f<br>
+          &nbsp;&nbsp;&nbsp;&nbsp;RewriteCond %{REQUEST_FILENAME} !-d<br>
+          &nbsp;&nbsp;&nbsp;&nbsp;RewriteRule ^(.*)$ http://127.0.0.1:8000/$1 [P,L]<br>
           &lt;/IfModule&gt;
         </div>
       </div>
 
       <div class="step-card">
         <div class="step-header">
-          <span>B. VPS Nginx Native (Opsional - Jika Menggunakan Server VPS Dedicated):</span>
+          <span>B. VPS Nginx Native (Jika Menggunakan Server VPS Dedicated):</span>
         </div>
         <div class="terminal-box">
           server {<br>
-          &nbsp;&nbsp;&nbsp;&nbsp;listen 80; listen 443 ssl http2;<br>
-          &nbsp;&nbsp;&nbsp;&nbsp;server_name dricash.andrichadhea.my.id;<br>
-          &nbsp;&nbsp;&nbsp;&nbsp;root /home/u141095167/domains/dricash.andrichadhea.my.id/public_html/public;<br>
-          &nbsp;&nbsp;&nbsp;&nbsp;index index.php index.html;<br><br>
+          &nbsp;&nbsp;&nbsp;&nbsp;listen 80; server_name dricash.andrichadhea.my.id;<br>
           &nbsp;&nbsp;&nbsp;&nbsp;location / {<br>
-          &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;try_files $uri $uri/ /index.php?$query_string;<br>
-          &nbsp;&nbsp;&nbsp;&nbsp;}<br><br>
-          &nbsp;&nbsp;&nbsp;&nbsp;location ~ \.php$ {<br>
-          &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;include snippets/fastcgi-php.conf;<br>
-          &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;fastcgi_pass unix:/var/run/php/php8.2-fpm.sock;<br>
+          &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;proxy_pass http://127.0.0.1:8000;<br>
+          &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;proxy_http_version 1.1;<br>
+          &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;proxy_set_header Upgrade $http_upgrade;<br>
+          &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;proxy_set_header Connection 'upgrade';<br>
+          &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;proxy_set_header Host $host;<br>
+          &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;proxy_set_header X-Real-IP $remote_addr;<br>
+          &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;<br>
+          &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;proxy_set_header X-Forwarded-Proto $scheme;<br>
           &nbsp;&nbsp;&nbsp;&nbsp;}<br>
           }
         </div>
@@ -667,23 +649,23 @@
       <div class="section-title">6. Troubleshooting & Tips Penting</div>
 
       <div class="alert-card alert-red">
-        <strong>⚠️ Error 500 / Internal Server Error (Blank White Page):</strong>
-        Pastikan izin direktori storage dan bootstrap/cache telah diatur ke mode tulis: <code>chmod -R 775 storage bootstrap/cache</code>. Periksa log detail permasalahan melalui file <code>storage/logs/laravel.log</code>.
+        <strong>⚠️ Error 502 Bad Gateway / Connection Refused:</strong>
+        Pastikan container sedang berjalan dengan mengecek <code>docker compose ps</code>. Jika container berhenti atau crash, jalankan <code>docker compose logs -f app</code> untuk menganalisis log container aplikasi.
       </div>
 
       <div class="alert-card alert-yellow">
         <strong>⚠️ Database Access Denied (SQLSTATE[HY000] [1045]):</strong>
-        Periksa konfigurasi <code>DB_DATABASE</code>, <code>DB_USERNAME</code>, dan <code>DB_PASSWORD</code> di file <code>.env</code> apakah sama persis dengan yang ada di panel MySQL Hostinger. Jalankan <code>php artisan config:clear</code> setelah mengedit berkas <code>.env</code>.
+        Periksa konfigurasi <code>DB_DATABASE</code>, <code>DB_USERNAME</code>, dan <code>DB_PASSWORD</code> di file <code>.env</code> apakah sama persis dengan yang ada di panel MySQL Hostinger. Jalankan <code>docker compose exec app php artisan config:clear</code>.
       </div>
 
       <div class="alert-card alert-blue">
         <strong>🔄 Tampilan Belum Berubah Setelah Deploy (Browser / Cloudflare Cache):</strong>
-        Lakukan Hard Refresh di browser dengan menekan <code>Ctrl + F5</code> (Windows) atau <code>Cmd + Shift + R</code> (Mac). Jika domain menggunakan Cloudflare Proxy, buka menu <strong>Caching &rarr; Configuration &rarr; Purge Everything</strong>.
+        Lakukan Hard Refresh di browser dengan menekan <code>Ctrl + F5</code> (Windows) atau <code>Cmd + Shift + R</code> (Mac). Jika domain menggunakan Cloudflare, buka menu <strong>Caching &rarr; Configuration &rarr; Purge Everything</strong>.
       </div>
 
       <div class="alert-card alert-purple" style="margin-bottom: 0;">
         <strong>📑 Akun Admin Bawaan & Hak Akses Panel:</strong>
-        Gunakan kredensial admin default untuk login pertama kali: Email <code>admin@dricash.app</code> dan Password <code>password</code>. Dari dashboard admin, Anda dapat mengaktifkan/menangguhkan user serta menyetel kategori master.
+        Kredensial default admin: Email <code>admin@dricash.app</code> dan Password <code>password</code>. Gunakan akun ini untuk masuk ke dashboard admin guna mengelola user dan kategori master.
       </div>
 
     </div>
