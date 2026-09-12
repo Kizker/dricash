@@ -75,23 +75,6 @@
           <span class="truncate">Hari ke-{{ metrics.period.today_day }} (Sisa {{ metrics.period.days_remaining }} hari)</span>
         </div>
 
-        <!-- Thumb-Zone Call to Action (CTA) Buttons (Full Width 50/50 Tactile Buttons) -->
-        <div class="grid grid-cols-2 gap-2 min-[360px]:gap-2.5 mt-3.5">
-          <button
-            type="button"
-            @click="openIncomeModal"
-            class="btn-hero-inflow active:scale-[0.97] transition-all flex items-center justify-center h-11 min-[360px]:h-12 rounded-xl min-[360px]:rounded-2xl font-bold text-xs min-[360px]:text-sm shadow-sm cursor-pointer"
-          >
-            <span>Pemasukan</span>
-          </button>
-          <button
-            type="button"
-            @click="openSpendModal"
-            class="btn-hero-outflow active:scale-[0.97] transition-all flex items-center justify-center h-11 min-[360px]:h-12 rounded-xl min-[360px]:rounded-2xl font-bold text-xs min-[360px]:text-sm shadow-sm cursor-pointer"
-          >
-            <span>Pengeluaran</span>
-          </button>
-        </div>
 
         <!-- Inflow, Outflow & Sisa Arus Kas Ribbon (Fluid Responsive & Human-Centric) -->
         <div class="mt-3.5 pt-3 border-t border-white/12 space-y-2">
