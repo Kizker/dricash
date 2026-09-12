@@ -17,16 +17,13 @@
       </div>
     </div>
 
-    <!-- Chart & Ranked Categories Container -->
-    <div class="grid grid-cols-1 sm:grid-cols-12 gap-4 items-center flex-1">
+    <!-- Active Chart & Ranked Categories Container -->
+    <div v-if="processedItems.length > 0" class="grid grid-cols-1 sm:grid-cols-12 gap-4 items-center flex-1">
       
       <!-- Doughnut Canvas with Hero Centerpiece -->
       <div class="sm:col-span-5 relative flex items-center justify-center py-2">
         <div class="w-36 h-36 min-[360px]:w-40 min-[360px]:h-40 relative">
-          <Doughnut v-if="processedItems.length > 0" :data="chartData" :options="chartOptions" />
-          <div v-else class="w-full h-full rounded-full border-2 border-dashed border-slate-200 flex items-center justify-center text-xs text-slate-400">
-            Belum ada data
-          </div>
+          <Doughnut :data="chartData" :options="chartOptions" />
           
           <!-- Center Text Overlay -->
           <div class="absolute inset-0 flex flex-col items-center justify-center pointer-events-none text-center px-2">
@@ -81,11 +78,6 @@
           </div>
         </div>
 
-        <!-- Empty State -->
-        <div v-if="processedItems.length === 0" class="text-center py-6 text-xs text-slate-400">
-          Belum ada pengeluaran tercatat di bulan ini.
-        </div>
-
         <!-- Progressive Disclosure Toggle (Avoids Mobile Scroll Trap) -->
         <button
           v-if="processedItems.length > 3"
@@ -100,6 +92,27 @@
       </div>
 
     </div>
+
+    <!-- Empty State Container (Aesthetic, Centered, Zero Collision) -->
+    <div v-else class="flex-1 flex flex-col items-center justify-center py-6 sm:py-8 text-center px-4">
+      <div class="w-32 h-32 sm:w-36 sm:h-36 rounded-full border-2 border-dashed border-slate-200/90 bg-slate-50/50 flex flex-col items-center justify-center relative mb-3">
+        <div class="w-9 h-9 rounded-xl bg-white shadow-2xs border border-slate-200/70 flex items-center justify-center text-slate-400 mb-1">
+          <PieChart :size="18" class="text-slate-400 stroke-[1.75]" />
+        </div>
+        <span class="text-[9px] uppercase tracking-wider font-bold text-slate-400">
+          Total Biaya
+        </span>
+        <span class="text-xs sm:text-sm font-black font-sans text-slate-700 tracking-tight mt-0.5">
+          Rp 0
+        </span>
+      </div>
+      <p class="text-xs font-semibold text-slate-700 mb-0.5">
+        Belum ada pengeluaran tercatat
+      </p>
+      <p class="text-[11px] text-slate-400 max-w-xs leading-relaxed">
+        Catat pengeluaran bulan ini untuk melihat visualisasi grafik dan pembagian pos anggaran.
+      </p>
+    </div>
   </div>
 </template>
 
@@ -107,7 +120,7 @@
 import { ref, computed } from 'vue';
 import { Chart as ChartJS, ArcElement, Tooltip, Legend } from 'chart.js';
 import { Doughnut } from 'vue-chartjs';
-import { ChevronDown, ChevronUp } from 'lucide-vue-next';
+import { ChevronDown, ChevronUp, PieChart } from 'lucide-vue-next';
 import { formatRupiah, formatCompactRupiah } from '@/Utils/formatters';
 
 ChartJS.register(ArcElement, Tooltip, Legend);
