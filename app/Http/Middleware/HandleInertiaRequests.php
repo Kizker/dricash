@@ -52,6 +52,8 @@ class HandleInertiaRequests extends Middleware
                     'currency' => $user->currency ?? 'IDR',
                     'monthly_start_day' => $user->monthly_start_day ?? 1,
                     'initial_net_worth' => (float) ($user->initial_net_worth ?? 0),
+                    'daily_budget_mode' => $user->daily_budget_mode ?? 'auto',
+                    'manual_daily_budget' => (float) ($user->manual_daily_budget ?? 0),
                     'avatar_url' => $user->avatar_url,
                 ] : null,
             ],

@@ -27,6 +27,8 @@ class User extends Authenticatable
         'currency',
         'monthly_start_day',
         'initial_net_worth',
+        'daily_budget_mode',
+        'manual_daily_budget',
         'avatar_url',
     ];
 
@@ -51,6 +53,7 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
             'initial_net_worth' => 'decimal:2',
+            'manual_daily_budget' => 'decimal:2',
             'monthly_start_day' => 'integer',
             'is_active' => 'boolean',
         ];

@@ -40,7 +40,8 @@ class WealthPlannerService
      */
     public static function clearUserCache(int $userId): void
     {
-        Cache::increment("user_{$userId}_wealth_ver");
+        $current = (int) Cache::get("user_{$userId}_wealth_ver", 1);
+        Cache::put("user_{$userId}_wealth_ver", $current + 1, 86400 * 30);
     }
 
     /**
@@ -48,7 +49,7 @@ class WealthPlannerService
      */
     public function getActiveCategories(User $user): Collection
     {
-        $version = Cache::get("user_{$user->id}_cat_ver", 1);
+        $version = (int) Cache::get("user_{$user->id}_cat_ver", 1);
         $cacheKey = "user_{$user->id}_categories_v{$version}";
 
         return Cache::remember($cacheKey, 3600, function () use ($user) {
@@ -70,7 +71,8 @@ class WealthPlannerService
     public static function clearCategoryCache(?int $userId = null): void
     {
         if ($userId) {
-            Cache::increment("user_{$userId}_cat_ver");
+            $current = (int) Cache::get("user_{$userId}_cat_ver", 1);
+            Cache::put("user_{$userId}_cat_ver", $current + 1, 86400 * 30);
         }
     }
 
@@ -179,13 +181,23 @@ class WealthPlannerService
         $basePool = max(0, $totalIncome - $totalObligationsAmount - $targetSavingsAmount);
         $baselineDailyAllowance = $daysInMonth > 0 ? ($basePool / $daysInMonth) : 0;
 
-        // Remaining pool for today and upcoming days
+        // Remaining pool for today and upcoming days (auto mode based on money owned)
         $remainingPool = max(0, $totalIncome - $totalObligationsAmount - $targetSavingsAmount - $pastExpenses);
-        $todayDailyBudget = $daysRemaining > 0 ? ($remainingPool / $daysRemaining) : 0;
+        $autoDailyBudget = $daysRemaining > 0 ? ($remainingPool / $daysRemaining) : 0;
+
+        $dailyBudgetMode = $user->daily_budget_mode ?? 'auto';
+        $manualDailyBudget = (float) ($user->manual_daily_budget ?? 0);
+
+        if ($dailyBudgetMode === 'manual' && $manualDailyBudget > 0) {
+            $todayDailyBudget = $manualDailyBudget;
+            $rolloverDelta = 0.0;
+        } else {
+            $todayDailyBudget = $autoDailyBudget;
+            $rolloverDelta = $todayDailyBudget - $baselineDailyAllowance;
+        }
         
         $todayRemaining = $todayDailyBudget - $spentToday;
         $todayProgressPercentage = ($todayDailyBudget > 0) ? min(200, round(($spentToday / $todayDailyBudget) * 100, 1)) : ($spentToday > 0 ? 100 : 0);
-        $rolloverDelta = $todayDailyBudget - $baselineDailyAllowance;
 
         // 6. Net Worth & Growth Status
         $currentNetWorth = $startingNetWorth + ($totalIncome - $totalAllExpenses);
@@ -249,6 +261,9 @@ class WealthPlannerService
                 'checklist' => $obligationsChecklist->values()->all(),
             ],
             'daily_budget' => [
+                'mode' => $dailyBudgetMode,
+                'manual_budget' => round($manualDailyBudget, 2),
+                'auto_budget' => round($autoDailyBudget, 2),
                 'today_budget' => round($todayDailyBudget, 2),
                 'spent_today' => round($spentToday, 2),
                 'remaining_today' => round($todayRemaining, 2),

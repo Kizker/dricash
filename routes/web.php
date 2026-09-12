@@ -4,6 +4,7 @@ use App\Http\Controllers\Admin\AdminCategoryController;
 use App\Http\Controllers\Admin\AdminDashboardController;
 use App\Http\Controllers\Admin\AdminUserController;
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\DailyBudgetController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\GrowthTargetController;
 use App\Http\Controllers\MonthlyObligationController;
@@ -30,8 +31,9 @@ Route::middleware('auth')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
     Route::post('/profile', [AuthController::class, 'updateProfile'])->name('profile.update');
 
-    // Dashboard
+    // Dashboard & Daily Budget
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+    Route::post('/daily-budget/settings', [DailyBudgetController::class, 'updateSettings'])->name('daily-budget.settings');
 
     // Quick Entry & Intervention
     Route::post('/quick-entry', [QuickEntryController::class, 'store'])->name('quick-entry.store');
