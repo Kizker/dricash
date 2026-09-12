@@ -179,31 +179,6 @@
                 </p>
               </div>
             </div>
-
-            <!-- Total Tabungan & Kas Awal -->
-            <div>
-              <label for="profile-net-worth" class="block text-xs font-medium text-slate-700 mb-1">
-                Total Tabungan & Kas Awal
-              </label>
-              <div class="relative">
-                <span class="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-sm font-extrabold">
-                  Rp
-                </span>
-                <input
-                  id="profile-net-worth"
-                  v-model="formattedInitialNetWorth"
-                  type="text"
-                  inputmode="numeric"
-                  placeholder="0"
-                  class="w-full bg-slate-50/70 border border-slate-200 focus:border-emerald-500 focus:bg-white focus:ring-2 focus:ring-emerald-500/15 rounded-xl pl-11 pr-3.5 py-2.5 text-sm font-extrabold text-slate-900 transition outline-none"
-                  @input="onNetWorthInput"
-                  required
-                />
-              </div>
-              <p class="text-[11px] text-slate-500 mt-1 leading-relaxed">
-                Saldo awal sebelum pencatatan bulan ini dimulai.
-              </p>
-            </div>
           </div>
         </div>
 
@@ -227,7 +202,6 @@
 import { ref, computed, watch } from 'vue';
 import { useForm } from '@inertiajs/vue3';
 import { User, X, Camera, Trash2, ChevronDown } from 'lucide-vue-next';
-import { formatThousands, parseThousands } from '@/Utils/formatters';
 
 const props = defineProps({
   isOpen: Boolean,
@@ -238,13 +212,11 @@ const emit = defineEmits(['close']);
 
 const avatarInput = ref(null);
 const avatarPreview = ref(null);
-const formattedInitialNetWorth = ref('');
 
 const form = useForm({
   name: props.user?.name || '',
   currency: props.user?.currency || 'IDR',
   monthly_start_day: props.user?.monthly_start_day || 1,
-  initial_net_worth: props.user?.initial_net_worth || 0,
   avatar: null,
   remove_avatar: false,
 });
@@ -254,19 +226,11 @@ watch(() => props.user, (u) => {
     form.name = u.name || '';
     form.currency = u.currency || 'IDR';
     form.monthly_start_day = u.monthly_start_day || 1;
-    form.initial_net_worth = u.initial_net_worth || 0;
-    formattedInitialNetWorth.value = formatThousands(u.initial_net_worth || 0);
     avatarPreview.value = null;
     form.avatar = null;
     form.remove_avatar = false;
   }
 }, { immediate: true });
-
-function onNetWorthInput(e) {
-  const val = parseThousands(e.target.value);
-  form.initial_net_worth = val;
-  formattedInitialNetWorth.value = formatThousands(val);
-}
 
 const userInitials = computed(() => {
   const name = form.name || props.user?.name || 'User';

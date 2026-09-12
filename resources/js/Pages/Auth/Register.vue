@@ -63,10 +63,10 @@
             </p>
           </div>
 
-          <!-- Starting Net Worth Input -->
+          <!-- Starting Savings Input (Recorded as Income) -->
           <div>
             <label for="reg-net-worth" class="block text-xs font-bold text-slate-700 mb-1.5">
-              Total Tabungan & Kas Awal
+              Saldo Tabungan Awal (Pemasukan)
             </label>
             <div class="relative">
               <span class="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 font-sans text-sm font-extrabold">
@@ -83,7 +83,7 @@
                 required
               />
             </div>
-            <p class="text-[11px] text-slate-500 mt-1">Saldo awal kas & tabungan Anda saat ini.</p>
+            <p class="text-[11px] text-slate-500 mt-1">Saldo ini otomatis dicatat sebagai pemasukan pertama di akun Anda.</p>
           </div>
 
           <!-- Password Input with Show/Hide Toggle -->

@@ -243,4 +243,29 @@ class FinancialWorkflowTest extends TestCase
         $this->user->refresh();
         $this->assertNull($this->user->avatar_url);
     }
+
+    public function test_registration_savings_input_is_recorded_as_income_transaction()
+    {
+        $regResponse = $this->post('/register', [
+            'name' => 'Budi Santoso',
+            'email' => 'budi@example.com',
+            'password' => 'password123',
+            'password_confirmation' => 'password123',
+            'initial_net_worth' => 5000000.00, // Rp 5.000.000
+        ]);
+
+        $regResponse->assertRedirect(route('dashboard'));
+
+        $newUser = \App\Models\User::where('email', 'budi@example.com')->first();
+        $this->assertNotNull($newUser);
+
+        // Assert that an income transaction of 5,000,000 was created for this user
+        $incomeTx = \App\Models\Transaction::where('user_id', $newUser->id)
+            ->where('type', 'income')
+            ->first();
+
+        $this->assertNotNull($incomeTx);
+        $this->assertEquals(5000000.00, (float) $incomeTx->amount);
+        $this->assertEquals('Saldo Tabungan Awal', $incomeTx->description);
+    }
 }
