@@ -89,7 +89,7 @@
             @click="openSpendModal"
             class="btn-hero-outflow active:scale-[0.97] transition-all flex items-center justify-center h-11 min-[360px]:h-12 rounded-xl min-[360px]:rounded-2xl font-bold text-xs min-[360px]:text-sm shadow-sm cursor-pointer"
           >
-            <span>Catat Jajan</span>
+            <span>Pengeluaran</span>
           </button>
         </div>
 
@@ -188,7 +188,6 @@
         <DailyBudgetCard
           v-if="activeMobileTab === 'all' || activeMobileTab === 'daily'"
           :data="metrics.daily_budget"
-          @quick-spend="openSpendModal"
         />
 
         <!-- 2. Ring-Fencing Kebutuhan Bulanan Checklist -->

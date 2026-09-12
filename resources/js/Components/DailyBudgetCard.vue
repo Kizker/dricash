@@ -7,38 +7,27 @@
       :class="statusGlowClass"
     ></div>
 
-    <!-- Header Section (Fluid Column on 320px, Row on 400px+) -->
-    <div class="flex flex-col xs:flex-row xs:items-start justify-between gap-3 relative z-10">
-      <div class="min-w-0 flex-1">
-        <div class="flex items-center space-x-2 flex-wrap gap-y-1">
-          <span class="text-xs sm:text-sm font-semibold text-slate-500 shrink-0">
-            Jatah Harian
-          </span>
-          <span 
-            class="px-2 py-0.5 rounded-full text-[9px] sm:text-[10px] font-bold border flex items-center space-x-1 shrink-0"
-            :class="statusBadgeClass"
-          >
-            <span class="w-1.5 h-1.5 rounded-full" :class="statusDotClass"></span>
-            <span>{{ statusLabel }}</span>
-          </span>
-        </div>
-        
-        <div class="mt-1 flex items-baseline flex-wrap gap-x-1.5">
-          <h2 class="text-2xl xs:text-3xl sm:text-4xl font-extrabold font-sans tracking-tight text-slate-900 whitespace-nowrap">
-            {{ formatRupiah(data.today_budget) }}
-          </h2>
-          <span class="text-xs font-medium text-slate-400 shrink-0">/ hari ini</span>
-        </div>
+    <!-- Header Section -->
+    <div class="relative z-10">
+      <div class="flex items-center space-x-2 flex-wrap gap-y-1">
+        <span class="text-xs sm:text-sm font-semibold text-slate-500 shrink-0">
+          Jatah Harian
+        </span>
+        <span 
+          class="px-2 py-0.5 rounded-full text-[9px] sm:text-[10px] font-bold border flex items-center space-x-1 shrink-0"
+          :class="statusBadgeClass"
+        >
+          <span class="w-1.5 h-1.5 rounded-full" :class="statusDotClass"></span>
+          <span>{{ statusLabel }}</span>
+        </span>
       </div>
-
-      <!-- Quick Action Trigger Button (Flat Rose Red for Expense) -->
-      <button
-        type="button"
-        @click="$emit('quick-spend')"
-        class="btn-human btn-human-danger btn-human-md self-stretch xs:self-auto w-full xs:w-auto font-bold px-4"
-      >
-        <span>Catat Jajan</span>
-      </button>
+      
+      <div class="mt-1 flex items-baseline flex-wrap gap-x-1.5">
+        <h2 class="text-2xl xs:text-3xl sm:text-4xl font-extrabold font-sans tracking-tight text-slate-900 whitespace-nowrap">
+          {{ formatRupiah(data.today_budget) }}
+        </h2>
+        <span class="text-xs font-medium text-slate-400 shrink-0">/ hari ini</span>
+      </div>
     </div>
 
     <!-- Multi-Tier Visual Progress Bar -->
@@ -123,8 +112,6 @@ const props = defineProps({
     required: true
   }
 });
-
-defineEmits(['quick-spend']);
 
 const statusLabel = computed(() => {
   if (props.data.status === 'overbudget') return 'Overbudget';

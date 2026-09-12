@@ -342,7 +342,7 @@ input[type="number"] {
     transform: scale(0.98);
 }
 
-/* 2. Flat Danger & Expense (Solid Rose Red: Pengeluaran, Catat Jajan, Hapus, Batal) */
+/* 2. Flat Danger & Expense (Solid Rose Red: Pengeluaran, Hapus, Batal) */
 .btn-human-danger,
 .btn-flat-danger {
     background-color: #E11D48;
