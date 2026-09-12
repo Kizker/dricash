@@ -1,0 +1,450 @@
+@import 'tailwindcss';
+
+@source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
+@source '../../storage/framework/views/*.php';
+@source '../**/*.blade.php';
+@source '../**/*.js';
+@source '../**/*.vue';
+
+@theme {
+    --font-sans: 'Poppins', ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    --font-mono: 'Poppins', ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    
+    --color-surface-base: #F8FAFC;
+    --color-surface-card: #FFFFFF;
+    --color-surface-card-hover: #F1F5F9;
+    --color-surface-border: #E2E8F0;
+    
+    --color-brand-emerald: #059669;
+    --color-brand-gold: #D97706;
+    --color-brand-coral: #DC2626;
+    --color-brand-cyan: #0891B2;
+}
+
+/* Seluruh angka harga, nominal mata uang, & data statistik di aplikasi menggunakan font Poppins */
+.font-mono,
+.font-sans,
+[class*="font-mono"],
+input[type="number"] {
+    font-family: 'Poppins', ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
+    font-feature-settings: 'tnum' on, 'lnum' on;
+}
+
+/* Hide native number input arrows/spinners globally */
+input::-webkit-outer-spin-button,
+input::-webkit-inner-spin-button {
+    -webkit-appearance: none !important;
+    margin: 0 !important;
+}
+input[type="number"] {
+    -moz-appearance: textfield !important;
+    appearance: textfield !important;
+}
+
+
+/* Custom Scrollbar for sleek light look */
+::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+::-webkit-scrollbar-track {
+    background: #F8FAFC;
+}
+::-webkit-scrollbar-thumb {
+    background: #CBD5E1;
+    border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+    background: #94A3B8;
+}
+
+/* Glassmorphic light fintech card */
+.glass-panel {
+    background: rgba(255, 255, 255, 0.92);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(226, 232, 240, 0.85);
+    box-shadow: 0 4px 20px -2px rgba(15, 23, 42, 0.05), 0 2px 6px -1px rgba(15, 23, 42, 0.03);
+}
+
+.glass-panel-glow {
+    position: relative;
+}
+.glass-panel-glow::before {
+    content: '';
+    position: absolute;
+    inset: -1px;
+    border-radius: inherit;
+    padding: 1px;
+    background: linear-gradient(135deg, rgba(16, 185, 129, 0.4), transparent 60%, rgba(14, 165, 233, 0.2));
+    -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    pointer-events: none;
+}
+
+/* Smooth Pulse Animation for Live Interventions */
+@keyframes softPulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.85; transform: scale(1.02); }
+}
+
+.animate-soft-pulse {
+    animation: softPulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+/* ==========================================================================
+   BRIMO-INSPIRED FINTECH UI/UX SYSTEM (Green Brand Identity)
+   ========================================================================== */
+
+/* BRImo Hero Emerald Header */
+.brimo-hero-header {
+    background: linear-gradient(145deg, #064e3b 0%, #047857 55%, #059669 100%);
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 10px 30px -5px rgba(6, 78, 59, 0.25), 0 4px 10px -2px rgba(6, 78, 59, 0.12);
+}
+
+.brimo-hero-header::before {
+    content: '';
+    position: absolute;
+    top: -40%;
+    right: -15%;
+    width: 320px;
+    height: 320px;
+    background: radial-gradient(circle, rgba(255, 255, 255, 0.12) 0%, rgba(255, 255, 255, 0) 70%);
+    border-radius: 50%;
+    pointer-events: none;
+}
+
+.brimo-hero-header::after {
+    content: '';
+    position: absolute;
+    bottom: -30%;
+    left: -10%;
+    width: 280px;
+    height: 280px;
+    background: radial-gradient(circle, rgba(20, 184, 166, 0.18) 0%, rgba(20, 184, 166, 0) 70%);
+    border-radius: 50%;
+    pointer-events: none;
+}
+
+/* Hero Action CTA Buttons (Tactile, High-Contrast, Thumb-Friendly) */
+.btn-hero-inflow {
+    background-color: #FFFFFF;
+    color: #064E3B;
+    border: 1px solid rgba(255, 255, 255, 0.95);
+    font-weight: 700;
+}
+.btn-hero-inflow:hover {
+    background-color: #F0FDF4;
+    color: #065F46;
+}
+.btn-hero-inflow:active {
+    transform: scale(0.97);
+}
+
+.btn-hero-outflow {
+    background-color: #E11D48;
+    color: #FFFFFF;
+    border: 1px solid rgba(244, 63, 94, 0.4);
+    font-weight: 700;
+}
+.btn-hero-outflow:hover {
+    background-color: #BE123C;
+}
+.btn-hero-outflow:active {
+    transform: scale(0.97);
+}
+
+/* Refined Tactile Flat Ledger Buttons (Clean, Calm, High Contrast, Anti-AI Slop) */
+.btn-ledger-income {
+    background-color: #ECFDF5;
+    color: #065F46;
+    border: 1px solid #A7F3D0;
+    font-weight: 700;
+    min-height: 38px;
+    border-radius: 0.75rem;
+    transition: all 0.15s cubic-bezier(0.16, 1, 0.3, 1);
+    box-shadow: 0 1px 2px rgba(6, 78, 59, 0.04);
+}
+.btn-ledger-income:hover {
+    background-color: #D1FAE5;
+    color: #047857;
+    border-color: #6EE7B7;
+}
+.btn-ledger-income:active {
+    transform: scale(0.96);
+    background-color: #A7F3D0;
+}
+
+.btn-ledger-expense {
+    background-color: #FFF1F2;
+    color: #9F1239;
+    border: 1px solid #FECDD3;
+    font-weight: 700;
+    min-height: 38px;
+    border-radius: 0.75rem;
+    transition: all 0.15s cubic-bezier(0.16, 1, 0.3, 1);
+    box-shadow: 0 1px 2px rgba(159, 18, 57, 0.04);
+}
+.btn-ledger-expense:hover {
+    background-color: #FFE4E6;
+    color: #881337;
+    border-color: #FDA4AF;
+}
+.btn-ledger-expense:active {
+    transform: scale(0.96);
+    background-color: #FECDD3;
+}
+
+/* BRImo Super-App Card */
+.brimo-card {
+    background: #FFFFFF;
+    border-radius: 1.25rem;
+    border: 1px solid rgba(226, 232, 240, 0.9);
+    box-shadow: 0 4px 16px -2px rgba(15, 23, 42, 0.04), 0 2px 6px -1px rgba(15, 23, 42, 0.02);
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.brimo-card:hover {
+    box-shadow: 0 8px 24px -4px rgba(15, 23, 42, 0.07), 0 2px 6px -1px rgba(15, 23, 42, 0.03);
+}
+
+/* BRImo Floating Saldo Utama Card */
+.brimo-balance-card {
+    background: #FFFFFF;
+    border-radius: 1.5rem;
+    border: 1px solid rgba(226, 232, 240, 0.95);
+    box-shadow: 0 10px 30px -5px rgba(5, 150, 105, 0.12), 0 4px 10px -2px rgba(15, 23, 42, 0.04);
+}
+
+/* BRImo Fast Menu Icon Button */
+.brimo-menu-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    background: transparent;
+    border: none;
+    outline: none;
+    transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+    user-select: none;
+}
+
+.brimo-menu-btn:active {
+    transform: scale(0.92);
+}
+
+.brimo-menu-icon {
+    width: 2.875rem;
+    height: 2.875rem;
+    border-radius: 1rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    box-shadow: 0 2px 8px -1px rgba(15, 23, 42, 0.05), inset 0 1px 0 rgba(255, 255, 255, 0.8);
+}
+
+@media (min-width: 360px) {
+    .brimo-menu-icon {
+        width: 3.25rem;
+        height: 3.25rem;
+        border-radius: 1.125rem;
+    }
+}
+
+.brimo-menu-btn:hover .brimo-menu-icon {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px -2px rgba(5, 150, 105, 0.18);
+}
+
+/* BRImo Bottom Nav Bar */
+.brimo-bottom-nav {
+    background: rgba(255, 255, 255, 0.96);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-top: 1px solid rgba(226, 232, 240, 0.85);
+    box-shadow: 0 -4px 20px -2px rgba(15, 23, 42, 0.06);
+}
+
+/* ==========================================================================
+/* ==========================================================================
+   FLAT SEMANTIC BUTTON DESIGN SYSTEM (Clean, Modern, Purpose-Driven Flat Colors)
+   ========================================================================== */
+
+/* Base Flat Button Structure */
+.btn-human,
+.btn-flat {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--font-sans);
+    font-weight: 600;
+    cursor: pointer;
+    user-select: none;
+    text-decoration: none;
+    border-radius: 0.75rem;
+    transition: all 0.15s cubic-bezier(0.16, 1, 0.3, 1);
+    outline: none;
+    min-height: 42px;
+    gap: 0.5rem;
+    position: relative;
+    letter-spacing: -0.01em;
+    border: none;
+}
+
+.btn-human-sm, .btn-flat-sm {
+    min-height: 36px;
+    padding: 0.4rem 0.85rem;
+    font-size: 0.75rem;
+    border-radius: 0.625rem;
+}
+
+.btn-human-md, .btn-flat-md {
+    min-height: 42px;
+    padding: 0.55rem 1.1rem;
+    font-size: 0.8125rem;
+    border-radius: 0.75rem;
+}
+
+.btn-human-lg, .btn-flat-lg {
+    min-height: 46px;
+    padding: 0.7rem 1.25rem;
+    font-size: 0.875rem;
+    border-radius: 0.875rem;
+}
+
+/* 1. Flat Primary & Success (Solid Emerald Green: Pemasukan, Simpan, Tambah, Primary CTA) */
+.btn-human-primary,
+.btn-human-success,
+.btn-flat-primary,
+.btn-flat-success {
+    background-color: #059669;
+    color: #ffffff !important;
+    border: 1px solid transparent;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+.btn-human-primary:hover:not(:disabled),
+.btn-human-success:hover:not(:disabled),
+.btn-flat-primary:hover:not(:disabled),
+.btn-flat-success:hover:not(:disabled) {
+    background-color: #047857;
+    color: #ffffff !important;
+}
+.btn-human-primary:active:not(:disabled),
+.btn-human-success:active:not(:disabled),
+.btn-flat-primary:active:not(:disabled),
+.btn-flat-success:active:not(:disabled) {
+    background-color: #065F46;
+    transform: scale(0.98);
+}
+
+/* 2. Flat Danger & Expense (Solid Rose Red: Pengeluaran, Catat Jajan, Hapus, Batal) */
+.btn-human-danger,
+.btn-flat-danger {
+    background-color: #E11D48;
+    color: #ffffff !important;
+    border: 1px solid transparent;
+    box-shadow: 0 1px 2px rgba(225, 29, 72, 0.15);
+}
+.btn-human-danger:hover:not(:disabled),
+.btn-flat-danger:hover:not(:disabled) {
+    background-color: #BE123C;
+    color: #ffffff !important;
+}
+.btn-human-danger:active:not(:disabled),
+.btn-flat-danger:active:not(:disabled) {
+    background-color: #9F1239;
+    transform: scale(0.98);
+}
+
+/* 3. Flat Amber & Warning (Solid Amber Ochre: Target Pertumbuhan, Kewajiban) */
+.btn-human-amber,
+.btn-flat-amber {
+    background-color: #D97706;
+    color: #ffffff !important;
+    border: 1px solid transparent;
+    box-shadow: 0 1px 2px rgba(217, 119, 6, 0.15);
+}
+.btn-human-amber:hover:not(:disabled),
+.btn-flat-amber:hover:not(:disabled) {
+    background-color: #B45309;
+    color: #ffffff !important;
+}
+.btn-human-amber:active:not(:disabled),
+.btn-flat-amber:active:not(:disabled) {
+    background-color: #92400E;
+    transform: scale(0.98);
+}
+
+/* 4. Flat Secondary (Clean Neutral Slate: Batal, Filter, Secondary Actions) */
+.btn-human-secondary,
+.btn-flat-secondary {
+    background-color: #F1F5F9;
+    color: #1E293B !important;
+    border: 1px solid #E2E8F0;
+    box-shadow: none;
+}
+.btn-human-secondary:hover:not(:disabled),
+.btn-flat-secondary:hover:not(:disabled) {
+    background-color: #E2E8F0;
+    color: #0F172A !important;
+}
+.btn-human-secondary:active:not(:disabled),
+.btn-flat-secondary:active:not(:disabled) {
+    background-color: #CBD5E1;
+    transform: scale(0.98);
+}
+
+/* 5. Flat White (For hero headers / dark gradient placement) */
+.btn-flat-white {
+    background-color: #FFFFFF;
+    color: #065F46 !important;
+    border: 1px solid transparent;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
+}
+.btn-flat-white:hover:not(:disabled) {
+    background-color: #F0FDF4;
+    color: #047857 !important;
+}
+.btn-flat-white:active:not(:disabled) {
+    background-color: #DCFCE7;
+    transform: scale(0.98);
+}
+
+/* 6. Flat Elevated FAB Button */
+.btn-human-fab,
+.btn-flat-fab {
+    background-color: #059669;
+    color: #ffffff !important;
+    border: 3px solid #ffffff;
+    box-shadow: 0 4px 12px rgba(5, 150, 105, 0.3);
+    transition: all 0.15s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.btn-human-fab:hover:not(:disabled),
+.btn-flat-fab:hover:not(:disabled) {
+    background-color: #047857;
+    transform: scale(1.05);
+    box-shadow: 0 6px 16px rgba(5, 150, 105, 0.38);
+}
+.btn-human-fab:active:not(:disabled),
+.btn-flat-fab:active:not(:disabled) {
+    background-color: #065F46;
+    transform: scale(0.95);
+}
+
+/* Universal Disabled State for all Flat Buttons */
+.btn-human:disabled,
+.btn-human[disabled],
+.btn-flat:disabled,
+.btn-flat[disabled] {
+    opacity: 0.5 !important;
+    cursor: not-allowed !important;
+    pointer-events: none !important;
+    transform: none !important;
+    box-shadow: none !important;
+}
+
