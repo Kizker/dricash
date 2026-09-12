@@ -9,6 +9,7 @@ use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 
 class QuickEntryController extends Controller
 {
@@ -46,7 +47,7 @@ class QuickEntryController extends Controller
             'category_id' => ['required', 'exists:categories,id'],
             'transaction_date' => ['required', 'date'],
             'description' => ['required', 'string', 'max:255'],
-            'payment_method' => ['nullable', 'string', 'max:100'],
+            'payment_method' => ['nullable', 'string', Rule::in(Transaction::PAYMENT_METHODS)],
             'force_override' => ['nullable', 'boolean'],
         ]);
 
@@ -80,7 +81,7 @@ class QuickEntryController extends Controller
             'amount' => $validated['amount'],
             'transaction_date' => $validated['transaction_date'],
             'description' => $validated['description'],
-            'payment_method' => $validated['payment_method'] ?? 'Transfer',
+            'payment_method' => $validated['payment_method'] ?? 'Bank',
             'is_growth_overridden' => $forceOverride,
         ]);
 

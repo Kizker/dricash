@@ -71,7 +71,7 @@
                 {{ tx.type === 'income' ? '+' : '-' }}{{ formatRupiah(tx.amount) }}
               </div>
               <div class="text-[9px] min-[360px]:text-[10px] text-slate-400 font-sans mt-0.5 truncate max-w-[95px]">
-                {{ tx.payment_method || 'Transfer' }}
+                {{ tx.payment_method || 'Bank' }}
               </div>
             </div>
           </div>
@@ -146,7 +146,7 @@
 
             <!-- Metode -->
             <td class="py-3.5 px-3.5 whitespace-nowrap text-slate-500 font-sans text-[11px]">
-              {{ tx.payment_method || 'Transfer' }}
+              {{ tx.payment_method || 'Bank' }}
             </td>
 
             <!-- Nominal -->
@@ -275,7 +275,7 @@
           <div class="flex items-center justify-between py-1.5 border-b border-slate-100">
             <span class="text-slate-400">Metode Pembayaran</span>
             <span class="font-semibold text-slate-800 font-sans">
-              {{ selectedTx.payment_method || 'Transfer / Lainnya' }}
+              {{ selectedTx.payment_method || 'Lainnya' }}
             </span>
           </div>
 

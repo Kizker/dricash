@@ -185,12 +185,10 @@
                 v-model="form.payment_method"
                 class="w-full bg-slate-50/80 border border-slate-200 focus:border-emerald-500 focus:bg-white rounded-xl px-3 py-2 text-xs text-slate-900 transition outline-none"
               >
-                <option value="QRIS / GoPay">QRIS / GoPay</option>
-                <option value="BCA Transfer">BCA Transfer</option>
-                <option value="Mandiri">Mandiri</option>
-                <option value="ShopeePay / OVO">ShopeePay / OVO</option>
+                <option value="Bank">Bank</option>
+                <option value="E-Wallet">E-Wallet</option>
                 <option value="Cash / Tunai">Cash / Tunai</option>
-                <option value="Kartu Kredit">Kartu Kredit</option>
+                <option value="Lainnya">Lainnya</option>
               </select>
             </div>
           </div>
@@ -241,7 +239,7 @@ const form = useForm({
   category_id: null,
   transaction_date: todayStr,
   description: '',
-  payment_method: 'QRIS / GoPay',
+  payment_method: 'Bank',
   force_override: false,
 });
 

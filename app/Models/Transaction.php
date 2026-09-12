@@ -11,6 +11,13 @@ class Transaction extends Model
 {
     use HasFactory, SoftDeletes;
 
+    public const PAYMENT_METHODS = [
+        'Bank',
+        'E-Wallet',
+        'Cash / Tunai',
+        'Lainnya',
+    ];
+
     protected $fillable = [
         'user_id',
         'category_id',

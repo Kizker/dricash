@@ -154,7 +154,7 @@ class MonthlyObligationController extends Controller
                     'type' => 'expense',
                     'amount' => $obligation->amount,
                     'description' => "Pembayaran Kewajiban: {$obligation->name}",
-                    'payment_method' => 'Transfer',
+                    'payment_method' => 'Bank',
                 ]
             );
 

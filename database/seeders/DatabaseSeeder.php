@@ -154,7 +154,7 @@ class DatabaseSeeder extends Seeder
                     'amount' => $obData['amount'],
                     'transaction_date' => $obData['paid_date']->format('Y-m-d'),
                     'description' => 'Bayar '.$obData['name'],
-                    'payment_method' => 'BCA Mobile',
+                    'payment_method' => 'Bank',
                 ]);
             }
         }
@@ -178,7 +178,7 @@ class DatabaseSeeder extends Seeder
             'amount' => 15000000.00,
             'transaction_date' => $now->copy()->startOfMonth()->format('Y-m-d'),
             'description' => 'Gaji Pokok Bulanan (Payroll)',
-            'payment_method' => 'Bank BCA',
+            'payment_method' => 'Bank',
         ]);
 
         Transaction::create([
@@ -188,7 +188,7 @@ class DatabaseSeeder extends Seeder
             'amount' => 3500000.00,
             'transaction_date' => $now->copy()->day(4)->format('Y-m-d'),
             'description' => 'Honor UI/UX Design Project Milestone 1',
-            'payment_method' => 'Bank Mandiri',
+            'payment_method' => 'Bank',
         ]);
 
         // 6. Create Daily Expenses from Day 1 to Today
@@ -214,7 +214,7 @@ class DatabaseSeeder extends Seeder
                 'amount' => $dt['amount'],
                 'transaction_date' => $now->copy()->day($txDay)->format('Y-m-d'),
                 'description' => $dt['desc'],
-                'payment_method' => 'QRIS / GoPay',
+                'payment_method' => 'E-Wallet',
             ]);
         }
     }

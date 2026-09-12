@@ -58,7 +58,7 @@ class FinancialWorkflowTest extends TestCase
             'category_id' => $this->incomeCat->id,
             'transaction_date' => '2026-09-10',
             'description' => 'Gaji Freelance',
-            'payment_method' => 'Bank BCA',
+            'payment_method' => 'Bank',
         ]);
 
         $response->assertRedirect();
@@ -101,7 +101,7 @@ class FinancialWorkflowTest extends TestCase
             'category_id' => $this->expenseCat->id,
             'transaction_date' => '2026-09-10',
             'description' => 'Belanja Komputer Mewah',
-            'payment_method' => 'Transfer',
+            'payment_method' => 'Bank',
             'force_override' => false,
         ]);
 
@@ -117,7 +117,7 @@ class FinancialWorkflowTest extends TestCase
             'category_id' => $this->expenseCat->id,
             'transaction_date' => '2026-09-10',
             'description' => 'Belanja Komputer Mewah',
-            'payment_method' => 'Transfer',
+            'payment_method' => 'Bank',
             'force_override' => true,
         ]);
 

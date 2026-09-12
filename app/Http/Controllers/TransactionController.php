@@ -8,6 +8,7 @@ use App\Services\WealthPlannerService;
 use Carbon\Carbon;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -84,7 +85,7 @@ class TransactionController extends Controller
             'category_id' => ['required', 'exists:categories,id'],
             'transaction_date' => ['required', 'date'],
             'description' => ['required', 'string', 'max:255'],
-            'payment_method' => ['nullable', 'string', 'max:100'],
+            'payment_method' => ['nullable', 'string', Rule::in(Transaction::PAYMENT_METHODS)],
         ]);
 
         $user = $request->user();
@@ -96,7 +97,7 @@ class TransactionController extends Controller
             'amount' => $validated['amount'],
             'transaction_date' => $validated['transaction_date'],
             'description' => $validated['description'],
-            'payment_method' => $validated['payment_method'] ?? 'Transfer',
+            'payment_method' => $validated['payment_method'] ?? 'Bank',
         ]);
 
         return back()->with('success', 'Transaksi berhasil ditambahkan ke buku besar.');
@@ -114,7 +115,7 @@ class TransactionController extends Controller
             'category_id' => ['required', 'exists:categories,id'],
             'transaction_date' => ['required', 'date'],
             'description' => ['required', 'string', 'max:255'],
-            'payment_method' => ['nullable', 'string', 'max:100'],
+            'payment_method' => ['nullable', 'string', Rule::in(Transaction::PAYMENT_METHODS)],
         ]);
 
         $transaction->update($validated);
