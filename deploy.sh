@@ -29,10 +29,12 @@ echo "🗄️ Menjalankan migrasi database MySQL..."
 php artisan migrate --force
 
 # 5. Build Aset Frontend (Vite & Vue 3)
-echo "⚡ Mengompilasi aset frontend Vite..."
-if command -v npm &> /dev/null; then
+if [ -f public/build/manifest.json ] && [ "$BUILD_FRONTEND" != "true" ]; then
+    echo "⚡ Aset frontend produksi (public/build) sudah siap dari Git, melewati npm build untuk menghemat resource server."
+elif command -v npm &> /dev/null; then
+    echo "⚡ Mengompilasi aset frontend Vite..."
     npm install --production=false
-    npm run build
+    npm run build || echo "⚠️ npm run build gagal karena batasan resource hosting, menggunakan aset pra-kompilasi."
 else
     echo "⚠️ npm tidak terdeteksi, melewati tahap kompilasi frontend lokal di server."
 fi
