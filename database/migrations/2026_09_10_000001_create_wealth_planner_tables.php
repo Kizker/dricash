@@ -56,7 +56,7 @@ return new class extends Migration
             $table->timestamps();
 
             $table->unique(['monthly_obligation_id', 'period_month', 'period_year'], 'unique_obligation_period_payment');
-            $table->index(['user_id', 'period_month', 'period_year']);
+            $table->index(['user_id', 'period_month', 'period_year'], 'mop_user_period_idx');
         });
 
         // 4. Growth Targets (Net Worth Growth Target & Saving Goals)
