@@ -18,6 +18,8 @@ class MonthlyObligation extends Model
         'name',
         'amount',
         'due_day',
+        'total_installments',
+        'paid_installments',
         'is_active',
         'notes',
     ];
@@ -38,6 +40,8 @@ class MonthlyObligation extends Model
         return [
             'amount' => 'decimal:2',
             'due_day' => 'integer',
+            'total_installments' => 'integer',
+            'paid_installments' => 'integer',
             'is_active' => 'boolean',
         ];
     }

@@ -17,108 +17,53 @@
       </p>
     </div>
 
-    <!-- 2. METRIC CARDS: Compact & Cohesive on Mobile (< sm), 3-Box on Desktop (>= sm) -->
-    <!-- Mobile View (< sm): Unified Single-Card Summary (Only ~120px vs ~280px) -->
-    <div class="sm:hidden bg-white rounded-2xl p-4 shadow-xs border border-slate-200/90 mb-4 space-y-3">
-      <!-- Hero Amount & Progress Meta -->
-      <div class="flex items-baseline justify-between gap-2">
-        <div class="min-w-0">
-          <span class="text-[10px] min-[360px]:text-[11px] font-semibold text-slate-400 uppercase tracking-wider block">
-            Total Kewajiban
+    <!-- 2. RINGKASAN KEWAJIBAN & SISA KAS KOTOR (Clean & Minimalist - Anti-Slop) -->
+    <div class="bg-white rounded-2xl sm:rounded-3xl p-4 sm:p-5 border border-slate-200/90 shadow-2xs mb-4 sm:mb-6">
+      <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <!-- Sisa Setelah Seluruh Kewajiban -->
+        <div>
+          <span class="text-xs text-slate-400 font-medium block">
+            Sisa Kas Setelah Kewajiban
           </span>
-          <div class="text-xl min-[360px]:text-2xl font-black font-sans text-slate-900 tracking-tight mt-0.5 truncate">
-            {{ formatRupiah(metrics.total_amount) }}
+          <div class="text-2xl sm:text-3xl font-black font-sans tracking-tight mt-0.5" :class="grossRemainingAfterAll >= 0 ? 'text-slate-900' : 'text-rose-600'">
+            {{ formatRupiah(grossRemainingAfterAll) }}
           </div>
-        </div>
-        <div class="text-right shrink-0">
-          <span class="text-xs font-bold font-sans" :class="metrics.paid_count === metrics.count && metrics.count > 0 ? 'text-emerald-600' : 'text-slate-700'">
-            {{ paidPercent }}% Terbayar
-          </span>
-          <span class="text-[10px] text-slate-400 block font-medium">
-            {{ metrics.paid_count }} dari {{ metrics.count }} lunas
-          </span>
-        </div>
-      </div>
-
-      <!-- Tactile Segmented Progress Bar -->
-      <div class="w-full h-2 bg-slate-100 rounded-full overflow-hidden flex p-0.5 gap-0.5">
-        <div
-          class="h-full bg-emerald-500 rounded-full transition-all duration-500 ease-out"
-          :style="{ width: `${paidPercent}%` }"
-        ></div>
-        <div
-          class="h-full bg-amber-500 rounded-full transition-all duration-500 ease-out"
-          :style="{ width: `${reservedPercent}%` }"
-        ></div>
-      </div>
-
-      <!-- Two Compact Stat Badges (Side by Side) -->
-      <div class="grid grid-cols-2 gap-2 pt-1 border-t border-slate-100">
-        <!-- Sudah Lunas -->
-        <div class="p-2.5 rounded-xl bg-emerald-50/70 border border-emerald-100/80 min-w-0">
-          <div class="flex items-center gap-1 text-[10px] font-semibold text-emerald-700">
-            <CheckCircle2 :size="11" class="shrink-0" />
-            <span class="truncate">Sudah Lunas</span>
-          </div>
-          <div class="text-xs min-[360px]:text-sm font-black font-sans text-emerald-700 mt-0.5 truncate">
-            {{ formatRupiah(metrics.paid_amount) }}
+          <div class="text-xs text-slate-400 font-sans mt-0.5">
+            Total kas <span class="text-slate-600 font-medium">{{ formatRupiah(currentMoney) }}</span> dipotong kewajiban <span class="text-slate-600 font-medium">{{ formatRupiah(totalObligations) }}</span>
           </div>
         </div>
 
-        <!-- Dana Terkunci -->
-        <div class="p-2.5 rounded-xl bg-amber-50/70 border border-amber-100/80 min-w-0">
-          <div class="flex items-center gap-1 text-[10px] font-semibold text-amber-700">
-            <Clock :size="11" class="shrink-0 text-amber-600" />
-            <span class="truncate">Dana Terkunci</span>
+        <!-- 3 Metrik Inti (Total, Lunas, Terkunci) dalam Baris Bersih -->
+        <div class="grid grid-cols-3 gap-3 sm:gap-6 pt-3 md:pt-0 border-t md:border-t-0 border-slate-100 text-left md:text-right shrink-0">
+          <div>
+            <span class="text-[11px] text-slate-400 block font-medium">Total Kewajiban</span>
+            <span class="text-xs sm:text-sm font-bold font-sans text-slate-800 mt-0.5 block">
+              {{ formatRupiah(metrics.total_amount) }}
+            </span>
+            <span class="text-[10px] text-slate-400 font-sans block">
+              {{ metrics.count }} item
+            </span>
           </div>
-          <div class="text-xs min-[360px]:text-sm font-black font-sans text-amber-700 mt-0.5 truncate">
-            {{ formatRupiah(metrics.reserved_amount) }}
+
+          <div>
+            <span class="text-[11px] text-slate-400 block font-medium">Sudah Lunas</span>
+            <span class="text-xs sm:text-sm font-bold font-sans text-emerald-600 mt-0.5 block">
+              {{ formatRupiah(metrics.paid_amount) }}
+            </span>
+            <span class="text-[10px] text-slate-400 font-sans block">
+              {{ metrics.paid_count }} lunas
+            </span>
           </div>
-        </div>
-      </div>
-    </div>
 
-    <!-- Desktop View (>= sm): 3-Column Responsive Grid -->
-    <div class="hidden sm:grid sm:grid-cols-3 gap-4 mb-6">
-      <!-- Total Obligation -->
-      <div class="glass-panel rounded-2xl p-5 min-w-0">
-        <div class="flex items-center space-x-1.5 text-slate-500 text-xs font-semibold uppercase tracking-wider truncate">
-          <Lock :size="13" class="text-amber-600 shrink-0" />
-          <span class="truncate">Total Kewajiban</span>
-        </div>
-        <div class="text-2xl font-black font-sans text-slate-900 mt-1 truncate">
-          {{ formatRupiah(metrics.total_amount) }}
-        </div>
-        <div class="text-[11px] text-slate-500 mt-0.5 truncate">
-          {{ metrics.count }} item aktif
-        </div>
-      </div>
-
-      <!-- Paid Obligation -->
-      <div class="glass-panel rounded-2xl p-5 min-w-0">
-        <div class="flex items-center space-x-1.5 text-slate-500 text-xs font-semibold uppercase tracking-wider truncate">
-          <CheckCircle2 :size="13" class="text-emerald-600 shrink-0" />
-          <span class="truncate">Sudah Lunas</span>
-        </div>
-        <div class="text-2xl font-black font-sans text-emerald-600 mt-1 truncate">
-          {{ formatRupiah(metrics.paid_amount) }}
-        </div>
-        <div class="text-[11px] text-slate-500 mt-0.5 truncate">
-          {{ metrics.paid_count }} dari {{ metrics.count }} lunas
-        </div>
-      </div>
-
-      <!-- Reserved / Remaining -->
-      <div class="glass-panel rounded-2xl p-5 min-w-0">
-        <div class="flex items-center space-x-1.5 text-slate-500 text-xs font-semibold uppercase tracking-wider truncate">
-          <Clock :size="13" class="text-rose-500 shrink-0" />
-          <span class="truncate">Dana Terkunci</span>
-        </div>
-        <div class="text-2xl font-black font-sans text-amber-600 mt-1 truncate">
-          {{ formatRupiah(metrics.reserved_amount) }}
-        </div>
-        <div class="text-[11px] text-slate-500 mt-0.5 truncate">
-          Terkunci otomatis
+          <div>
+            <span class="text-[11px] text-slate-400 block font-medium">Dana Terkunci</span>
+            <span class="text-xs sm:text-sm font-bold font-sans mt-0.5 block" :class="metrics.reserved_amount > 0 ? 'text-amber-600' : 'text-slate-400'">
+              {{ formatRupiah(metrics.reserved_amount) }}
+            </span>
+            <span class="text-[10px] text-slate-400 font-sans block">
+              {{ metrics.reserved_amount > 0 ? 'Belum dibayar' : 'Lunas semua' }}
+            </span>
+          </div>
         </div>
       </div>
     </div>
@@ -174,6 +119,20 @@
                 <span class="font-sans">Tgl {{ item.due_day }}</span>
                 <span>•</span>
                 <span class="truncate">{{ item.category?.name || 'Kewajiban' }}</span>
+              </div>
+
+              <!-- Cicilan Info (Clean & Simple) -->
+              <div v-if="item.total_installments" class="mt-1 text-[11px] text-slate-500 font-sans flex items-center gap-1.5 flex-wrap">
+                <span class="font-medium text-slate-700">
+                  Cicilan {{ item.paid_installments }}/{{ item.total_installments }}x
+                </span>
+                <span>•</span>
+                <span :class="item.remaining_installments === 0 ? 'text-emerald-600 font-bold' : 'text-amber-700 font-medium'">
+                  {{ item.remaining_installments === 0 ? 'Lunas Total' : `Sisa ${item.remaining_installments}x lagi lunas` }}
+                </span>
+                <span v-if="item.remaining_amount" class="text-slate-400">
+                  (Sisa pokok {{ formatRupiah(item.remaining_amount) }})
+                </span>
               </div>
             </div>
           </div>
@@ -245,13 +204,26 @@
                 </button>
               </td>
 
-              <!-- Name & Notes -->
+              <!-- Name & Notes & Cicilan -->
               <td class="py-3.5 px-3.5">
                 <div class="font-bold text-slate-900 text-sm" :class="{ 'line-through text-slate-400': isPaid(item) }">
                   {{ item.name }}
                 </div>
                 <div v-if="item.notes" class="text-[11px] text-slate-500 mt-0.5">
                   {{ item.notes }}
+                </div>
+                <!-- Cicilan Calculation Info (Clean & Simple) -->
+                <div v-if="item.total_installments" class="mt-1 text-xs text-slate-500 font-sans flex items-center gap-1.5 flex-wrap">
+                  <span class="font-medium text-slate-700">
+                    Cicilan {{ item.paid_installments }}/{{ item.total_installments }}x
+                  </span>
+                  <span>•</span>
+                  <span :class="item.remaining_installments === 0 ? 'text-emerald-600 font-bold' : 'text-amber-700 font-medium'">
+                    {{ item.remaining_installments === 0 ? 'Lunas Total' : `Sisa ${item.remaining_installments}x lagi lunas` }}
+                  </span>
+                  <span v-if="item.remaining_amount" class="text-slate-400">
+                    (Sisa pokok {{ formatRupiah(item.remaining_amount) }})
+                  </span>
                 </div>
               </td>
 
@@ -361,6 +333,7 @@
               <div class="relative">
                 <select
                   v-model="form.category_id"
+                  @change="onCategoryChange"
                   class="w-full bg-slate-50 border border-slate-200 focus:border-amber-500 focus:bg-white rounded-xl px-3 py-2 pr-8 text-xs text-slate-900 transition outline-none appearance-none cursor-pointer"
                 >
                   <option :value="null">Pilih Kategori...</option>
@@ -390,6 +363,57 @@
             </div>
           </div>
 
+          <!-- Skema Cicilan / Tenor Bertahap -->
+          <div class="p-3 bg-slate-50 border border-slate-200/80 rounded-xl space-y-2.5">
+            <label class="flex items-center gap-2 cursor-pointer select-none">
+              <input
+                type="checkbox"
+                v-model="form.has_installments"
+                class="rounded border-slate-300 text-amber-600 focus:ring-amber-500 w-4 h-4 cursor-pointer"
+              />
+              <span class="text-xs font-bold text-slate-700">Skema Cicilan / Tenor Bertahap</span>
+            </label>
+
+            <div v-if="form.has_installments" class="grid grid-cols-2 gap-2.5 pt-1">
+              <div>
+                <label class="block text-[10px] font-semibold uppercase tracking-wider text-slate-500 mb-1">
+                  Total Tenor (Berapa Kali)
+                </label>
+                <input
+                  v-model.number="form.total_installments"
+                  type="number"
+                  min="1"
+                  max="360"
+                  placeholder="Contoh: 12"
+                  class="w-full bg-white border border-slate-200 focus:border-amber-500 rounded-lg px-3 py-2 text-xs font-sans text-slate-900 transition outline-none"
+                  :required="form.has_installments"
+                />
+              </div>
+              <div>
+                <label class="block text-[10px] font-semibold uppercase tracking-wider text-slate-500 mb-1">
+                  Sudah Dibayar (Kali)
+                </label>
+                <input
+                  v-model.number="form.paid_installments"
+                  type="number"
+                  min="0"
+                  :max="form.total_installments || 360"
+                  placeholder="0"
+                  class="w-full bg-white border border-slate-200 focus:border-amber-500 rounded-lg px-3 py-2 text-xs font-sans text-slate-900 transition outline-none"
+                />
+              </div>
+            </div>
+
+            <div v-if="form.has_installments && form.total_installments" class="text-[10px] text-slate-600 font-sans flex items-center justify-between pt-0.5">
+              <span>
+                Sisa: <strong class="text-amber-700">{{ Math.max(0, (form.total_installments || 0) - (form.paid_installments || 0)) }} kali lagi</strong> lunas
+              </span>
+              <span v-if="form.amount" class="text-slate-400">
+                Est. sisa: {{ formatRupiah(Math.max(0, (form.total_installments || 0) - (form.paid_installments || 0)) * (form.amount || 0)) }}
+              </span>
+            </div>
+          </div>
+
           <div>
             <label class="block text-[11px] sm:text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1">
               Catatan Tambahan
@@ -397,7 +421,7 @@
             <textarea
               v-model="form.notes"
               rows="2"
-              placeholder="Keterangan nomor rekening, ID pelanggan, dll."
+              placeholder="Keterangan nomor kontrak cicilan, bank, atau ID pelanggan."
               class="w-full bg-slate-50 border border-slate-200 focus:border-amber-500 focus:bg-white rounded-xl px-3.5 py-2 text-xs text-slate-900 transition outline-none"
             ></textarea>
           </div>
@@ -422,7 +446,7 @@ import { ref, computed } from 'vue';
 import { useForm, router } from '@inertiajs/vue3';
 import AppLayout from '@/Layouts/AppLayout.vue';
 import CategoryIcon from '@/Components/CategoryIcon.vue';
-import { Lock, CheckCircle2, Clock, Plus, Check, Edit2, Trash2, X, ChevronDown, ShieldCheck } from 'lucide-vue-next';
+import { Plus, Check, Edit2, Trash2, X, ChevronDown } from 'lucide-vue-next';
 import { formatRupiah, formatThousands, parseThousands } from '@/Utils/formatters';
 
 const props = defineProps({
@@ -438,20 +462,26 @@ const props = defineProps({
     type: Object,
     required: true
   },
+  wealth: {
+    type: Object,
+    default: () => ({ current_net_worth: 0 })
+  },
   period: {
     type: Object,
     required: true
   }
 });
 
-const paidPercent = computed(() => {
-  if (!props.metrics?.total_amount || props.metrics.total_amount <= 0) return 0;
-  return Math.min(100, Math.round((props.metrics.paid_amount / props.metrics.total_amount) * 100));
+const currentMoney = computed(() => {
+  return Number(props.wealth?.current_net_worth ?? 0);
 });
 
-const reservedPercent = computed(() => {
-  if (!props.metrics?.total_amount || props.metrics.total_amount <= 0) return 0;
-  return Math.max(0, 100 - paidPercent.value);
+const totalObligations = computed(() => {
+  return Number(props.metrics?.total_amount ?? 0);
+});
+
+const grossRemainingAfterAll = computed(() => {
+  return currentMoney.value - totalObligations.value;
 });
 
 const isModalOpen = ref(false);
@@ -464,7 +494,18 @@ const form = useForm({
   category_id: null,
   due_day: 5,
   notes: '',
+  has_installments: false,
+  total_installments: null,
+  paid_installments: 0,
 });
+
+function onCategoryChange() {
+  if (!form.category_id) return;
+  const selected = props.categories.find(c => c.id === form.category_id);
+  if (selected && /cicil|pinjam/i.test(selected.name)) {
+    form.has_installments = true;
+  }
+}
 
 function isPaid(item) {
   const match = props.metrics.checklist?.find(c => c.id === item.id);
@@ -486,10 +527,14 @@ function onAmountInput(e) {
 function openAddModal() {
   editingItem.value = null;
   form.reset();
+  form.has_installments = false;
+  form.total_installments = null;
+  form.paid_installments = 0;
   formattedAmount.value = '';
   form.due_day = 5;
   if (props.categories.length > 0) {
     form.category_id = props.categories[0].id;
+    onCategoryChange();
   }
   isModalOpen.value = true;
 }
@@ -502,6 +547,9 @@ function editObligation(item) {
   form.category_id = item.category_id;
   form.due_day = item.due_day;
   form.notes = item.notes || '';
+  form.has_installments = Boolean(item.total_installments);
+  form.total_installments = item.total_installments || null;
+  form.paid_installments = item.paid_installments || 0;
   isModalOpen.value = true;
 }
 
@@ -514,6 +562,12 @@ function deleteObligation(item) {
 }
 
 function submitForm() {
+  // If not installments, reset installment fields
+  if (!form.has_installments) {
+    form.total_installments = null;
+    form.paid_installments = 0;
+  }
+
   if (editingItem.value) {
     form.put(route('obligations.update', editingItem.value.id), {
       preserveScroll: true,

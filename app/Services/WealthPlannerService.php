@@ -144,12 +144,28 @@ class WealthPlannerService
             ->first();
 
         $targetGrowthPercentage = (float) ($growthTarget?->target_growth_percentage ?? 5.00);
-        $startingNetWorth = (float) ($growthTarget?->starting_net_worth > 0 
-            ? $growthTarget->starting_net_worth 
-            : ($user->initial_net_worth ?? 0));
+
+        // Saldo / uang yang dipunya pada awal bulan (dihitung dinamis dari saldo awal bawaan + seluruh transaksi sebelum bulan ini)
+        $priorIncome = (float) Transaction::where('user_id', $user->id)
+            ->where('transaction_date', '<', $startDate->format('Y-m-d'))
+            ->where('type', 'income')
+            ->sum('amount');
+
+        $priorExpenses = (float) Transaction::where('user_id', $user->id)
+            ->where('transaction_date', '<', $startDate->format('Y-m-d'))
+            ->where('type', 'expense')
+            ->sum('amount');
+
+        $hasPriorTransactions = ($priorIncome > 0 || $priorExpenses > 0);
+        $startingNetWorth = $hasPriorTransactions
+            ? ((float) ($user->initial_net_worth ?? 0.0) + ($priorIncome - $priorExpenses))
+            : (float) ($growthTarget?->starting_net_worth > 0 
+                ? $growthTarget->starting_net_worth 
+                : ($user->initial_net_worth ?? 0.0));
         
-        // Target savings calculation
-        $calculatedGrowthAmount = ($startingNetWorth > 0) ? ($startingNetWorth * ($targetGrowthPercentage / 100)) : 0;
+        // Target tabungan: menyesuaikan berdasarkan uang yang dipunya (saldo awal, atau total uang masuk)
+        $baseWealthForGrowth = $startingNetWorth > 0 ? $startingNetWorth : max(0, $totalIncome);
+        $calculatedGrowthAmount = ($baseWealthForGrowth > 0) ? ($baseWealthForGrowth * ($targetGrowthPercentage / 100)) : 0;
         $targetSavingsAmount = (float) ($growthTarget?->target_savings_amount > 0 ? $growthTarget->target_savings_amount : $calculatedGrowthAmount);
 
         // 4. Daily Expenses (Excluding obligations) calculated in-memory from $monthTransactions
@@ -213,7 +229,10 @@ class WealthPlannerService
             ? round((($projectedEndOfMonthNetWorth - $startingNetWorth) / $startingNetWorth) * 100, 2)
             : 0;
 
-        $isGrowthOnTrack = ($projectedGrowthPercentage >= $targetGrowthPercentage);
+        $targetRequiredNetWorth = $startingNetWorth + $targetSavingsAmount;
+        $isGrowthOnTrack = ($targetSavingsAmount > 0) 
+            ? ($projectedEndOfMonthNetWorth >= $targetRequiredNetWorth)
+            : ($projectedGrowthPercentage >= $targetGrowthPercentage);
 
         // 7. Recent Transactions (last 10 indexed fetch)
         $recentTransactions = Transaction::with(['category', 'monthlyObligation'])
@@ -283,7 +302,7 @@ class WealthPlannerService
                 'projected_percentage' => $projectedGrowthPercentage,
                 'is_on_track' => $isGrowthOnTrack,
                 'target_savings_amount' => $targetSavingsAmount,
-                'gap_amount' => round(max(0, ($startingNetWorth * (1 + ($targetGrowthPercentage / 100))) - $projectedEndOfMonthNetWorth), 2),
+                'gap_amount' => round(max(0, $targetRequiredNetWorth - $projectedEndOfMonthNetWorth), 2),
             ],
             'recent_transactions' => $recentTransactions,
             'charts' => [
@@ -306,6 +325,7 @@ class WealthPlannerService
         $growth = $metrics['growth'];
         $startingNetWorth = $growth['starting_net_worth'];
         $targetPercentage = $growth['target_percentage'];
+        $targetSavingsAmount = (float) ($growth['target_savings_amount'] ?? 0);
         
         // Calculate newly projected net worth after this expense
         $newProjectedNetWorth = $growth['projected_net_worth'] - $amount;
@@ -313,7 +333,10 @@ class WealthPlannerService
             ? round((($newProjectedNetWorth - $startingNetWorth) / $startingNetWorth) * 100, 2)
             : 0;
 
-        $breaches = ($newProjectedPercentage < $targetPercentage);
+        $targetRequiredNetWorth = $startingNetWorth + $targetSavingsAmount;
+        $breaches = ($targetSavingsAmount > 0)
+            ? ($newProjectedNetWorth < $targetRequiredNetWorth)
+            : ($newProjectedPercentage < $targetPercentage);
         $growthDrop = round($growth['projected_percentage'] - $newProjectedPercentage, 2);
 
         return [

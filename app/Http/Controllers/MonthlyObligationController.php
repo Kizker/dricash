@@ -34,12 +34,22 @@ class MonthlyObligationController extends Controller
             ->orderBy('due_day', 'asc')
             ->get()
             ->map(function ($ob) {
+                $totalInst = $ob->total_installments ? (int) $ob->total_installments : null;
+                $paidInst = (int) ($ob->paid_installments ?? 0);
+                $remainingInst = $totalInst ? max(0, $totalInst - $paidInst) : null;
+                $remainingAmount = $totalInst ? ($remainingInst * (float) $ob->amount) : null;
+
                 return [
                     'id' => $ob->id,
                     'category_id' => $ob->category_id,
                     'name' => $ob->name,
                     'amount' => (float) $ob->amount,
                     'due_day' => $ob->due_day,
+                    'total_installments' => $totalInst,
+                    'paid_installments' => $paidInst,
+                    'remaining_installments' => $remainingInst,
+                    'remaining_amount' => $remainingAmount,
+                    'is_installment' => !is_null($totalInst) || (str_contains(strtolower($ob->category?->name ?? ''), 'cicilan')),
                     'is_active' => (bool) $ob->is_active,
                     'notes' => $ob->notes,
                     'category' => $ob->category ? [
@@ -55,6 +65,7 @@ class MonthlyObligationController extends Controller
             'obligations' => $obligations,
             'categories' => $categories,
             'metrics' => $metrics['obligations'],
+            'wealth' => $metrics['growth'],
             'period' => $metrics['period'],
         ]);
     }
@@ -66,6 +77,8 @@ class MonthlyObligationController extends Controller
             'amount' => ['required', 'numeric', 'min:0.01'],
             'category_id' => ['nullable', 'exists:categories,id'],
             'due_day' => ['required', 'integer', 'min:1', 'max:31'],
+            'total_installments' => ['nullable', 'integer', 'min:1', 'max:360'],
+            'paid_installments' => ['nullable', 'integer', 'min:0'],
             'notes' => ['nullable', 'string'],
         ]);
 
@@ -76,6 +89,8 @@ class MonthlyObligationController extends Controller
             'name' => $validated['name'],
             'amount' => $validated['amount'],
             'due_day' => $validated['due_day'],
+            'total_installments' => $validated['total_installments'] ?? null,
+            'paid_installments' => $validated['paid_installments'] ?? 0,
             'is_active' => true,
             'notes' => $validated['notes'] ?? null,
         ]);
@@ -94,6 +109,8 @@ class MonthlyObligationController extends Controller
             'amount' => ['required', 'numeric', 'min:0.01'],
             'category_id' => ['nullable', 'exists:categories,id'],
             'due_day' => ['required', 'integer', 'min:1', 'max:31'],
+            'total_installments' => ['nullable', 'integer', 'min:1', 'max:360'],
+            'paid_installments' => ['nullable', 'integer', 'min:0'],
             'is_active' => ['boolean'],
             'notes' => ['nullable', 'string'],
         ]);
@@ -142,6 +159,11 @@ class MonthlyObligationController extends Controller
             $payment->paid_at = Carbon::now();
             $payment->save();
 
+            // Increment paid_installments jika ada target total_installments
+            if ($obligation->total_installments && $obligation->paid_installments < $obligation->total_installments) {
+                $obligation->increment('paid_installments');
+            }
+
             // Create expense transaction
             Transaction::updateOrCreate(
                 [
@@ -164,6 +186,11 @@ class MonthlyObligationController extends Controller
             $payment->paid_amount = 0.00;
             $payment->paid_at = null;
             $payment->save();
+
+            // Decrement paid_installments jika sebelumnya bertambah
+            if ($obligation->total_installments && $obligation->paid_installments > 0) {
+                $obligation->decrement('paid_installments');
+            }
 
             // Remove corresponding transaction for this period
             Transaction::where('user_id', $request->user()->id)

@@ -32,7 +32,7 @@ class GrowthTargetController extends Controller
         ], [
             'target_growth_percentage' => 5.00,
             'target_savings_amount' => 0.00,
-            'starting_net_worth' => $user->initial_net_worth ?? 0.00,
+            'starting_net_worth' => $metrics['growth']['starting_net_worth'] ?? 0.00,
         ]);
 
         return Inertia::render('Growth/Index', [
@@ -43,7 +43,6 @@ class GrowthTargetController extends Controller
             'currentTarget' => [
                 'target_growth_percentage' => (float) $target->target_growth_percentage,
                 'target_savings_amount' => (float) $target->target_savings_amount,
-                'starting_net_worth' => (float) ($target->starting_net_worth > 0 ? $target->starting_net_worth : $user->initial_net_worth),
                 'notes' => $target->notes,
             ],
         ]);
@@ -56,16 +55,15 @@ class GrowthTargetController extends Controller
             'period_year' => ['required', 'integer', 'min:2020', 'max:2050'],
             'target_growth_percentage' => ['required', 'numeric', 'min:0', 'max:100'],
             'target_savings_amount' => ['nullable', 'numeric', 'min:0'],
-            'starting_net_worth' => ['required', 'numeric', 'min:0'],
             'notes' => ['nullable', 'string', 'max:500'],
         ]);
 
         $user = $request->user();
 
-        // Update user initial_net_worth if starting net worth was updated
-        if ($validated['starting_net_worth'] > 0) {
-            $user->update(['initial_net_worth' => $validated['starting_net_worth']]);
-        }
+        // Atur target TIDAK mempengaruhi jumlah uang / saldo user.
+        // Jumlah uang hanya terupdate dari transaksi pengeluaran dan pemasukan.
+        $metrics = $this->wealthService->getDashboardMetrics($user, $validated['period_month'], $validated['period_year'], false);
+        $computedStartingNetWorth = (float) ($metrics['growth']['starting_net_worth'] ?? 0.00);
 
         GrowthTarget::updateOrCreate(
             [
@@ -76,11 +74,13 @@ class GrowthTargetController extends Controller
             [
                 'target_growth_percentage' => $validated['target_growth_percentage'],
                 'target_savings_amount' => $validated['target_savings_amount'] ?? 0.00,
-                'starting_net_worth' => $validated['starting_net_worth'],
+                'starting_net_worth' => $computedStartingNetWorth,
                 'notes' => $validated['notes'] ?? null,
             ]
         );
 
-        return back()->with('success', "Target pertumbuhan kekayaan ({$validated['target_growth_percentage']}%) berhasil diperbarui!");
+        WealthPlannerService::clearUserCache($user->id);
+
+        return back()->with('success', "Target pertumbuhan ({$validated['target_growth_percentage']}%) berhasil diperbarui!");
     }
 }

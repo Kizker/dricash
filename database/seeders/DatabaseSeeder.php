@@ -117,6 +117,8 @@ class DatabaseSeeder extends Seeder
                 'category_id' => $categories['Cicilan & Pinjaman']->id,
                 'amount' => 1200000.00,
                 'due_day' => 28,
+                'total_installments' => 12,
+                'paid_installments' => 4,
                 'is_paid' => false,
                 'paid_date' => null,
             ],
@@ -129,6 +131,8 @@ class DatabaseSeeder extends Seeder
                 'name' => $obData['name'],
                 'amount' => $obData['amount'],
                 'due_day' => $obData['due_day'],
+                'total_installments' => $obData['total_installments'] ?? null,
+                'paid_installments' => $obData['paid_installments'] ?? 0,
                 'is_active' => true,
                 'notes' => 'Kewajiban bulanan rutin',
             ]);

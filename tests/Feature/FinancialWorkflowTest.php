@@ -166,14 +166,61 @@ class FinancialWorkflowTest extends TestCase
         ]);
     }
 
+    public function test_installment_obligation_tracks_remaining_and_updates_on_toggle()
+    {
+        Carbon::setTestNow(Carbon::create(2026, 9, 10, 12, 0, 0));
+
+        $cicilan = MonthlyObligation::create([
+            'user_id' => $this->user->id,
+            'category_id' => $this->expenseCat->id,
+            'name' => 'Cicilan Laptop',
+            'amount' => 1000000.00,
+            'due_day' => 10,
+            'total_installments' => 12,
+            'paid_installments' => 3,
+            'is_active' => true,
+        ]);
+
+        // Access index page
+        $response = $this->actingAs($this->user)->get('/obligations');
+        $response->assertOk();
+        $response->assertInertia(fn ($page) => $page
+            ->component('Obligations/Index')
+            ->has('obligations', 1)
+            ->where('obligations.0.total_installments', 12)
+            ->where('obligations.0.paid_installments', 3)
+            ->where('obligations.0.remaining_installments', 9)
+            ->where('obligations.0.remaining_amount', 9000000)
+            ->has('wealth')
+        );
+
+        // Toggle payment to paid -> paid_installments increments to 4
+        $toggleRes = $this->actingAs($this->user)->post("/obligations/{$cicilan->id}/toggle");
+        $toggleRes->assertRedirect();
+
+        $cicilan->refresh();
+        $this->assertEquals(4, $cicilan->paid_installments);
+
+        // Toggle back to unpaid -> paid_installments decrements back to 3
+        $toggleBackRes = $this->actingAs($this->user)->post("/obligations/{$cicilan->id}/toggle");
+        $toggleBackRes->assertRedirect();
+
+        $cicilan->refresh();
+        $this->assertEquals(3, $cicilan->paid_installments);
+    }
+
     public function test_user_can_update_growth_target()
     {
+        $originalNetWorth = $this->user->initial_net_worth;
+        $service = app(\App\Services\WealthPlannerService::class);
+        $beforeMetrics = $service->getDashboardMetrics($this->user, 9, 2026, false);
+
+        // Atur target tanpa mengirimkan starting_net_worth
         $response = $this->actingAs($this->user)->post('/growth', [
             'period_month' => 9,
             'period_year' => 2026,
             'target_growth_percentage' => 7.50,
             'target_savings_amount' => 2000000.00,
-            'starting_net_worth' => 18000000.00,
             'notes' => 'Target tabungan kuartal 3',
         ]);
 
@@ -185,6 +232,29 @@ class FinancialWorkflowTest extends TestCase
             'target_growth_percentage' => 7.50,
             'target_savings_amount' => 2000000.00,
         ]);
+
+        // Pastikan initial_net_worth user TIDAK berubah sama sekali oleh atur target
+        $this->assertEquals($originalNetWorth, $this->user->fresh()->initial_net_worth);
+
+        // Pastikan jumlah uang/current_net_worth tetap sama persis setelah atur target
+        $afterTargetMetrics = $service->getDashboardMetrics($this->user, 9, 2026, false);
+        $this->assertEquals($beforeMetrics['growth']['current_net_worth'], $afterTargetMetrics['growth']['current_net_worth']);
+
+        // Pastikan jumlah uang HANYA terupdate saat ada input pemasukan / pengeluaran
+        Transaction::create([
+            'user_id' => $this->user->id,
+            'category_id' => $this->incomeCat->id,
+            'type' => 'income',
+            'amount' => 1500000.00,
+            'transaction_date' => '2026-09-12',
+            'description' => 'Freelance Tambahan',
+        ]);
+
+        $afterIncomeMetrics = $service->getDashboardMetrics($this->user, 9, 2026, false);
+        $this->assertEquals(
+            $beforeMetrics['growth']['current_net_worth'] + 1500000.00,
+            $afterIncomeMetrics['growth']['current_net_worth']
+        );
     }
 
     public function test_transaction_ledger_filters_accurately()
