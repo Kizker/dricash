@@ -157,4 +157,23 @@ createInertiaApp({
     },
 });
 
+// Register PWA Service Worker to guard against navigation glitches & provide offline fallback
+if (typeof window !== 'undefined' && 'serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+        // Only register on standard HTTP(S) and avoid Vite HMR dev port
+        if (window.location.protocol.startsWith('http') && window.location.port !== '5173') {
+            navigator.serviceWorker.register('/sw.js', { scope: '/' })
+                .then((registration) => {
+                    if (registration.waiting) {
+                        registration.waiting.postMessage({ type: 'SKIP_WAITING' });
+                    }
+                })
+                .catch(() => {
+                    // Ignore registration failure in restricted environments
+                });
+        }
+    });
+}
+
+
 

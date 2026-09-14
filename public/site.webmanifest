@@ -1,11 +1,15 @@
 {
+  "id": "/",
   "name": "Dricash - Asisten Keuangan Pintar",
   "short_name": "Dricash",
+  "description": "Kelola arus kas, tabungan, kewajiban, dan target kekayaan Anda secara cerdas.",
   "start_url": "/",
+  "scope": "/",
   "display": "standalone",
   "orientation": "portrait-primary",
   "theme_color": "#059669",
   "background_color": "#FFFFFF",
+  "categories": ["finance", "productivity"],
   "icons": [
     {
       "src": "/favicon-192.png",
@@ -20,17 +24,16 @@
       "purpose": "maskable"
     },
     {
-      "src": "/favicon.png",
+      "src": "/favicon-512.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "/favicon.png",
+      "src": "/favicon-512.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "maskable"
     }
   ]
 }
-

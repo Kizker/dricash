@@ -28,6 +28,30 @@ class HandleInertiaRequests extends Middleware
     }
 
     /**
+     * Handle the incoming request and harden response headers against caching issues.
+     */
+    public function handle(Request $request, \Closure $next): \Symfony\Component\HttpFoundation\Response
+    {
+        $response = parent::handle($request, $next);
+
+        // Prevent browser disk cache, mobile PWA standalone cache, LiteSpeed, and CDNs
+        // from caching dynamic responses (especially Inertia JSON).
+        // This ensures opening the PWA never renders raw cached JSON.
+        $response->headers->set('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0, private');
+        $response->headers->set('Pragma', 'no-cache');
+        $response->headers->set('Expires', '0');
+
+        // Ensure Vary header preserves both X-Inertia and Accept headers
+        $response->headers->set('Vary', 'X-Inertia, Accept', false);
+
+        // Explicitly bypass LiteSpeed Cache & Nginx/CDN proxy cache
+        $response->headers->set('X-LiteSpeed-Cache-Control', 'no-cache, no-store');
+        $response->headers->set('X-Accel-Expires', '0');
+
+        return $response;
+    }
+
+    /**
      * Define the props that are shared by default.
      *
      * @see https://inertiajs.com/shared-data
