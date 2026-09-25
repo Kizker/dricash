@@ -28,7 +28,8 @@ class WealthPlannerService
         }
 
         $version = Cache::get("user_{$user->id}_wealth_ver", 1);
-        $cacheKey = "wealth_metrics_u{$user->id}_v{$version}_{$year}_{$month}";
+        // Include today's date so cached daily budget expires at midnight (after 23:59)
+        $cacheKey = "wealth_metrics_u{$user->id}_v{$version}_{$year}_{$month}_{$now->format('Ymd')}";
 
         return Cache::remember($cacheKey, 600, function () use ($user, $month, $year) {
             return $this->computeDashboardMetrics($user, $month, $year);

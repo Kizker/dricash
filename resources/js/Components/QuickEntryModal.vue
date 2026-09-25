@@ -231,7 +231,12 @@ const props = defineProps({
 
 const emit = defineEmits(['close']);
 
-const todayStr = new Date().toISOString().split('T')[0];
+// Use the device's local date (toISOString() is UTC and lags behind WIB until 07:00)
+const getLocalToday = () => {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+};
+const todayStr = getLocalToday();
 
 const form = useForm({
   type: props.initialType,
