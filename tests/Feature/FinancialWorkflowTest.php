@@ -416,4 +416,85 @@ class FinancialWorkflowTest extends TestCase
         $this->assertEquals(5000000.00, (float) $incomeTx->amount);
         $this->assertEquals('Saldo Tabungan Awal', $incomeTx->description);
     }
+
+    public function test_obligations_are_sorted_by_nearest_upcoming_installment_payment_due_date()
+    {
+        // Obligation starting next month (November 2026) with due_day 1
+        $futureNov = MonthlyObligation::create([
+            'user_id' => $this->user->id,
+            'category_id' => $this->expenseCat->id,
+            'name' => 'Cicilan Dana Instan Tgl 1',
+            'amount' => 432000.00,
+            'due_day' => 1,
+            'total_installments' => 3,
+            'start_month' => 11,
+            'start_year' => 2026,
+            'end_month' => 1,
+            'end_year' => 2027,
+            'is_active' => true,
+        ]);
+
+        // Obligation active in October 2026 with due_day 5
+        $activeDay5 = MonthlyObligation::create([
+            'user_id' => $this->user->id,
+            'category_id' => $this->expenseCat->id,
+            'name' => 'Cicilan Shopeepay Tgl 5',
+            'amount' => 356000.00,
+            'due_day' => 5,
+            'total_installments' => 8,
+            'start_month' => 10,
+            'start_year' => 2026,
+            'end_month' => 5,
+            'end_year' => 2027,
+            'is_active' => true,
+        ]);
+
+        // Obligation active in October 2026 with due_day 2 (closest!)
+        $activeDay2 = MonthlyObligation::create([
+            'user_id' => $this->user->id,
+            'category_id' => $this->expenseCat->id,
+            'name' => 'Cicilan Spinjam Tgl 2',
+            'amount' => 569000.00,
+            'due_day' => 2,
+            'total_installments' => 6,
+            'start_month' => 10,
+            'start_year' => 2026,
+            'end_month' => 3,
+            'end_year' => 2027,
+            'is_active' => true,
+        ]);
+
+        // Fetch October 2026
+        $res = $this->actingAs($this->user)->get('/obligations?month=10&year=2026');
+        $res->assertOk();
+        $res->assertInertia(fn ($page) => $page
+            ->component('Obligations/Index')
+            // Closest active payment: Tgl 2 (Spinjam)
+            ->where('obligations.0.name', 'Cicilan Spinjam Tgl 2')
+            // Next active payment: Tgl 5 (Shopeepay)
+            ->where('obligations.1.name', 'Cicilan Shopeepay Tgl 5')
+            // Future unstarted payment (Nov 2026): Tgl 1 (Dana Instan)
+            ->where('obligations.2.name', 'Cicilan Dana Instan Tgl 1')
+        );
+
+        // Now mark Cicilan Spinjam Tgl 2 as paid for October 2026
+        $this->actingAs($this->user)->post("/obligations/{$activeDay2->id}/toggle", [
+            'month' => 10,
+            'year' => 2026,
+        ]);
+
+        // Fetch October 2026 again
+        $res2 = $this->actingAs($this->user)->get('/obligations?month=10&year=2026');
+        $res2->assertOk();
+        $res2->assertInertia(fn ($page) => $page
+            ->component('Obligations/Index')
+            // Unpaid closest payment now becomes Shopeepay Tgl 5
+            ->where('obligations.0.name', 'Cicilan Shopeepay Tgl 5')
+            // Future unstarted is next
+            ->where('obligations.1.name', 'Cicilan Dana Instan Tgl 1')
+            // Paid item moved to the bottom
+            ->where('obligations.2.name', 'Cicilan Spinjam Tgl 2')
+            ->where('obligations.2.is_paid', true)
+        );
+    }
 }

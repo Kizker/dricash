@@ -119,7 +119,7 @@
             Daftar Kewajiban
           </h3>
           <p class="text-[10px] min-[360px]:text-[11px] text-slate-400">
-            Klik centang untuk tandai lunas • Item lunas otomatis berpindah ke bawah
+            Urutan jatuh tempo terdekat • Item lunas otomatis berpindah ke bawah
           </p>
         </div>
         
@@ -163,7 +163,16 @@
                 {{ item.name }}
               </div>
               <div class="flex items-center space-x-1.5 mt-0.5 text-[10px] text-slate-500 flex-wrap">
-                <span class="font-sans" :class="{ 'line-through text-slate-400': isPaid(item) }">Tgl {{ item.due_day }}</span>
+                <span class="font-sans font-medium" :class="{ 'line-through text-slate-400': isPaid(item) }">
+                  Tgl {{ item.due_day }} {{ getDueMonthName(item) }}
+                </span>
+                <span
+                  v-if="getProximityBadge(item)"
+                  class="px-1.5 py-0.2 rounded-full text-[9px] font-bold border"
+                  :class="getProximityBadge(item).classes"
+                >
+                  {{ getProximityBadge(item).text }}
+                </span>
                 <span>•</span>
                 <span class="truncate">{{ item.category?.name || 'Kewajiban' }}</span>
               </div>
@@ -360,9 +369,25 @@
                 </span>
               </td>
 
-              <!-- Due Day -->
-              <td class="py-3.5 px-3.5 font-sans" :class="isPaid(item) ? 'line-through text-slate-400' : 'text-slate-600'">
-                Tgl {{ item.due_day }} setiap bulan
+              <!-- Due Day & Proximity -->
+              <td class="py-3.5 px-3.5 font-sans">
+                <div class="flex items-center gap-1.5 flex-wrap">
+                  <span :class="isPaid(item) ? 'line-through text-slate-400' : 'text-slate-800 font-semibold'">
+                    Tgl {{ item.due_day }} {{ getDueMonthName(item) }}
+                  </span>
+                  <!-- Proximity Badge -->
+                  <span
+                    v-if="getProximityBadge(item)"
+                    class="px-2 py-0.5 rounded-full text-[10px] font-sans font-bold inline-flex items-center gap-1 border shadow-2xs"
+                    :class="getProximityBadge(item).classes"
+                  >
+                    <Clock v-if="getProximityBadge(item).showClock" :size="10" />
+                    <span>{{ getProximityBadge(item).text }}</span>
+                  </span>
+                </div>
+                <div class="text-[10px] text-slate-400 mt-0.5">
+                  {{ getDueScheduleSubtitle(item) }}
+                </div>
               </td>
 
               <!-- Amount -->
@@ -652,7 +677,7 @@ import { ref, computed, watch } from 'vue';
 import { useForm, router, Link } from '@inertiajs/vue3';
 import AppLayout from '@/Layouts/AppLayout.vue';
 import CategoryIcon from '@/Components/CategoryIcon.vue';
-import { Plus, Check, Edit2, Trash2, X, ChevronDown, ReceiptText, ArrowRight, Calendar } from 'lucide-vue-next';
+import { Plus, Check, Edit2, Trash2, X, ChevronDown, ReceiptText, ArrowRight, Calendar, Clock } from 'lucide-vue-next';
 import { formatRupiah, formatThousands, parseThousands } from '@/Utils/formatters';
 
 const props = defineProps({
@@ -733,15 +758,151 @@ function isPaid(item) {
   return Boolean(match?.is_paid);
 }
 
-// Urutkan: Yang belum bayar di atas, yang sudah lunas dicoret & pindah ke paling bawah
+const monthNamesShort = {
+  1: 'Jan',
+  2: 'Feb',
+  3: 'Mar',
+  4: 'Apr',
+  5: 'Mei',
+  6: 'Jun',
+  7: 'Jul',
+  8: 'Agu',
+  9: 'Sep',
+  10: 'Okt',
+  11: 'Nov',
+  12: 'Des'
+};
+
+function getDueMonthName(item) {
+  if (item.is_before_start && item.start_month) {
+    return monthNamesShort[item.start_month] || '';
+  }
+  return monthNamesShort[props.period.month] || '';
+}
+
+function getDueScheduleSubtitle(item) {
+  if (isPaid(item)) return 'Lunas untuk periode ini';
+  if (item.is_after_end) return 'Masa angsuran telah berakhir';
+  if (item.is_before_start) return `Mulai ${monthNames[item.start_month] || ''} ${item.start_year || ''}`;
+  if (!item.total_installments && !item.start_month) return 'Rutin setiap bulan';
+  return `Tagihan ${monthNames[props.period.month] || ''} ${props.period.year || ''}`;
+}
+
+function getProximityBadge(item) {
+  if (isPaid(item)) {
+    return {
+      text: 'Lunas',
+      classes: 'bg-emerald-50 text-emerald-700 border-emerald-200/80',
+      showClock: false
+    };
+  }
+
+  if (item.is_after_end) {
+    return {
+      text: 'Selesai',
+      classes: 'bg-slate-100 text-slate-500 border-slate-200/80',
+      showClock: false
+    };
+  }
+
+  if (item.is_before_start && item.start_month && item.start_year) {
+    const startMName = monthNamesShort[item.start_month] || '';
+    return {
+      text: `Mulai ${startMName} ${item.start_year}`,
+      classes: 'bg-blue-50 text-blue-700 border-blue-200/80',
+      showClock: false
+    };
+  }
+
+  const now = new Date();
+  const todayDate = now.getDate();
+  const todayMonth = now.getMonth() + 1;
+  const todayYear = now.getFullYear();
+
+  const isCurrentPeriodNow = (Number(props.period.month) === todayMonth && Number(props.period.year) === todayYear);
+
+  if (isCurrentPeriodNow) {
+    const dueDay = Number(item.due_day ?? 1);
+    if (dueDay === todayDate) {
+      return {
+        text: 'Hari ini',
+        classes: 'bg-rose-50 text-rose-700 border-rose-200/90 font-black animate-pulse',
+        showClock: true
+      };
+    }
+    if (dueDay === todayDate + 1) {
+      return {
+        text: 'Besok',
+        classes: 'bg-amber-50 text-amber-700 border-amber-300 font-bold',
+        showClock: true
+      };
+    }
+    if (dueDay > todayDate) {
+      const diff = dueDay - todayDate;
+      return {
+        text: `${diff} hari lagi`,
+        classes: diff <= 3
+          ? 'bg-amber-50 text-amber-700 border-amber-200 font-semibold'
+          : 'bg-slate-100 text-slate-600 border-slate-200',
+        showClock: false
+      };
+    }
+    if (dueDay < todayDate) {
+      const diff = todayDate - dueDay;
+      return {
+        text: `Terlewat ${diff} hr`,
+        classes: 'bg-rose-50 text-rose-700 border-rose-300 font-bold',
+        showClock: true
+      };
+    }
+  }
+
+  return null;
+}
+
+function getObligationSortRank(item) {
+  // Tier 1: Belum lunas & aktif periode ini (prioritas pembayaran terdekat)
+  if (item.is_within_period && !isPaid(item)) return 1;
+  // Tier 2: Belum lunas & belum mulai (mulai bulan mendatang)
+  if (item.is_before_start && !isPaid(item)) return 2;
+  // Tier 3: Sudah lunas bulan ini (pindah ke bawah & dicoret)
+  if (isPaid(item)) return 3;
+  // Tier 4: Selesai / telah lewat masa angsuran
+  if (item.is_after_end) return 4;
+  return 1;
+}
+
+function getObligationDueDateKey(item) {
+  const currentYear = Number(props.period?.year ?? new Date().getFullYear());
+  const currentMonth = Number(props.period?.month ?? (new Date().getMonth() + 1));
+  const dueDay = Number(item.due_day ?? 1);
+
+  if (item.is_within_period) {
+    return currentYear * 10000 + currentMonth * 100 + dueDay;
+  }
+  if (item.is_before_start && item.start_year && item.start_month) {
+    return Number(item.start_year) * 10000 + Number(item.start_month) * 100 + dueDay;
+  }
+  if (item.is_after_end && item.end_year && item.end_month) {
+    return Number(item.end_year) * 10000 + Number(item.end_month) * 100 + dueDay;
+  }
+  return currentYear * 10000 + currentMonth * 100 + dueDay;
+}
+
+// Urutkan: Jatuh tempo pembayaran cicilan paling dekat di atas, yang sudah lunas berpindah ke bawah
 const sortedObligations = computed(() => {
   return [...props.obligations].sort((a, b) => {
-    const aPaid = isPaid(a) ? 1 : 0;
-    const bPaid = isPaid(b) ? 1 : 0;
-    if (aPaid !== bPaid) {
-      return aPaid - bPaid;
+    const rankA = getObligationSortRank(a);
+    const rankB = getObligationSortRank(b);
+    if (rankA !== rankB) {
+      return rankA - rankB;
     }
-    return (a.due_day ?? 0) - (b.due_day ?? 0);
+    const dateA = getObligationDueDateKey(a);
+    const dateB = getObligationDueDateKey(b);
+    if (dateA !== dateB) {
+      return dateA - dateB;
+    }
+    return (a.id ?? 0) - (b.id ?? 0);
   });
 });
 

@@ -40,7 +40,6 @@ class MonthlyObligationController extends Controller
 
         $obligations = MonthlyObligation::with(['category'])
             ->where('user_id', $user->id)
-            ->orderBy('due_day', 'asc')
             ->get()
             ->map(function ($ob) use ($payments, $periodKey) {
                 $payment = $payments->get($ob->id);
@@ -96,7 +95,50 @@ class MonthlyObligationController extends Controller
                         'color' => $ob->category->color,
                     ] : null,
                 ];
-            });
+            })
+            ->sort(function ($a, $b) use ($year, $month) {
+                // Tier 1: Belum lunas & Aktif periode ini (paling mendesak / terdekat)
+                // Tier 2: Belum lunas & Periode mendatang (belum mulai)
+                // Tier 3: Sudah lunas periode ini (pindah ke bawah)
+                // Tier 4: Selesai / telah lewat masa periode
+                $getRank = function ($item) {
+                    if ($item['is_paid']) return 3;
+                    if ($item['is_after_end']) return 4;
+                    if ($item['is_within_period']) return 1;
+                    if ($item['is_before_start']) return 2;
+                    return 1;
+                };
+
+                $rankA = $getRank($a);
+                $rankB = $getRank($b);
+                if ($rankA !== $rankB) {
+                    return $rankA <=> $rankB;
+                }
+
+                // Hitung key tanggal jatuh tempo berikutnya
+                $getDueDateKey = function ($item) use ($year, $month) {
+                    $dueDay = (int) ($item['due_day'] ?? 1);
+                    if ($item['is_within_period']) {
+                        return $year * 10000 + $month * 100 + $dueDay;
+                    }
+                    if ($item['is_before_start'] && $item['start_year'] && $item['start_month']) {
+                        return (int) $item['start_year'] * 10000 + (int) $item['start_month'] * 100 + $dueDay;
+                    }
+                    if ($item['is_after_end'] && $item['end_year'] && $item['end_month']) {
+                        return (int) $item['end_year'] * 10000 + (int) $item['end_month'] * 100 + $dueDay;
+                    }
+                    return $year * 10000 + $month * 100 + $dueDay;
+                };
+
+                $dateA = $getDueDateKey($a);
+                $dateB = $getDueDateKey($b);
+                if ($dateA !== $dateB) {
+                    return $dateA <=> $dateB;
+                }
+
+                return ($a['id'] ?? 0) <=> ($b['id'] ?? 0);
+            })
+            ->values();
 
         return Inertia::render('Obligations/Index', [
             'obligations' => $obligations,
