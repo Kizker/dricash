@@ -194,6 +194,20 @@
                   </span>
                 </template>
               </div>
+
+              <!-- Periode Cicilan Range (Bulan & Tahun) -->
+              <div v-if="item.period_range" class="mt-0.5 text-[10px] text-slate-500 font-sans flex items-center gap-1 flex-wrap">
+                <span class="text-slate-500 flex items-center gap-1">
+                  <Calendar :size="10" class="text-slate-400 shrink-0" />
+                  <span>{{ item.period_range }}</span>
+                </span>
+                <span v-if="item.is_before_start" class="px-1.5 py-0.2 rounded text-[8px] font-bold bg-blue-50 text-blue-700 border border-blue-200">
+                  Belum Mulai
+                </span>
+                <span v-else-if="item.is_after_end" class="px-1.5 py-0.2 rounded text-[8px] font-bold bg-slate-100 text-slate-600 border border-slate-200">
+                  Selesai
+                </span>
+              </div>
             </div>
           </div>
 
@@ -316,6 +330,22 @@
                       (Sisa pokok {{ formatRupiah(item.remaining_amount) }})
                     </span>
                   </template>
+                </div>
+                <!-- Periode Cicilan Range (Bulan & Tahun) -->
+                <div v-if="item.period_range" class="mt-0.5 text-[11px] text-slate-500 font-sans flex items-center gap-1.5 flex-wrap">
+                  <span class="text-slate-600 flex items-center gap-1">
+                    <Calendar :size="11" class="text-slate-400 shrink-0" />
+                    <span>Periode: <strong>{{ item.period_range }}</strong></span>
+                  </span>
+                  <span v-if="item.is_before_start" class="px-1.5 py-0.2 rounded text-[9px] font-bold bg-blue-50 text-blue-700 border border-blue-200">
+                    Belum Mulai
+                  </span>
+                  <span v-else-if="item.is_after_end" class="px-1.5 py-0.2 rounded text-[9px] font-bold bg-slate-100 text-slate-600 border border-slate-200">
+                    Selesai
+                  </span>
+                  <span v-else class="px-1.5 py-0.2 rounded text-[9px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                    Aktif
+                  </span>
                 </div>
                 <div v-if="isPaid(item)" class="text-[10px] text-emerald-600 font-sans mt-0.5 flex items-center gap-1">
                   <span>Tercatat otomatis di Buku Pengeluaran</span>
@@ -462,7 +492,7 @@
           </div>
 
           <!-- Skema Cicilan / Tenor Bertahap -->
-          <div class="p-3 bg-slate-50 border border-slate-200/80 rounded-xl space-y-2.5">
+          <div class="p-3.5 bg-slate-50 border border-slate-200/80 rounded-xl space-y-3">
             <label class="flex items-center gap-2 cursor-pointer select-none">
               <input
                 type="checkbox"
@@ -472,43 +502,121 @@
               <span class="text-xs font-bold text-slate-700">Skema Cicilan / Tenor Bertahap</span>
             </label>
 
-            <div v-if="form.has_installments" class="grid grid-cols-2 gap-2.5 pt-1">
-              <div>
-                <label class="block text-[10px] font-semibold uppercase tracking-wider text-slate-500 mb-1">
-                  Total Tenor (Berapa Kali)
-                </label>
-                <input
-                  v-model.number="form.total_installments"
-                  type="number"
-                  min="1"
-                  max="360"
-                  placeholder="Contoh: 12"
-                  class="w-full bg-white border border-slate-200 focus:border-amber-500 rounded-lg px-3 py-2 text-xs font-sans text-slate-900 transition outline-none"
-                  :required="form.has_installments"
-                />
+            <div v-if="form.has_installments" class="space-y-3 pt-1">
+              <!-- Baris 1: Total Tenor & Sudah Dibayar -->
+              <div class="grid grid-cols-2 gap-2.5">
+                <div>
+                  <label class="block text-[10px] font-semibold uppercase tracking-wider text-slate-500 mb-1">
+                    Total Tenor (Kali)
+                  </label>
+                  <input
+                    v-model.number="form.total_installments"
+                    type="number"
+                    min="1"
+                    max="360"
+                    placeholder="Contoh: 12"
+                    @input="onTenorOrStartChange"
+                    class="w-full bg-white border border-slate-200 focus:border-amber-500 rounded-lg px-3 py-2 text-xs font-sans text-slate-900 transition outline-none"
+                    :required="form.has_installments"
+                  />
+                </div>
+                <div>
+                  <label class="block text-[10px] font-semibold uppercase tracking-wider text-slate-500 mb-1">
+                    Sudah Dibayar (Kali)
+                  </label>
+                  <input
+                    v-model.number="form.paid_installments"
+                    type="number"
+                    min="0"
+                    :max="form.total_installments || 360"
+                    placeholder="0"
+                    class="w-full bg-white border border-slate-200 focus:border-amber-500 rounded-lg px-3 py-2 text-xs font-sans text-slate-900 transition outline-none"
+                  />
+                </div>
               </div>
-              <div>
-                <label class="block text-[10px] font-semibold uppercase tracking-wider text-slate-500 mb-1">
-                  Sudah Dibayar (Kali)
-                </label>
-                <input
-                  v-model.number="form.paid_installments"
-                  type="number"
-                  min="0"
-                  :max="form.total_installments || 360"
-                  placeholder="0"
-                  class="w-full bg-white border border-slate-200 focus:border-amber-500 rounded-lg px-3 py-2 text-xs font-sans text-slate-900 transition outline-none"
-                />
-              </div>
-            </div>
 
-            <div v-if="form.has_installments && form.total_installments" class="text-[10px] text-slate-600 font-sans flex items-center justify-between pt-0.5">
-              <span>
-                Sisa: <strong class="text-amber-700">{{ Math.max(0, (form.total_installments || 0) - (form.paid_installments || 0)) }} kali lagi</strong> lunas
-              </span>
-              <span v-if="form.amount" class="text-slate-400">
-                Est. sisa: {{ formatRupiah(Math.max(0, (form.total_installments || 0) - (form.paid_installments || 0)) * (form.amount || 0)) }}
-              </span>
+              <!-- Baris 2: Dari Bulan Apa s/d Bulan Apa (Tahun Menyesuaikan) -->
+              <div class="p-2.5 bg-white border border-slate-200/90 rounded-xl space-y-2">
+                <div class="text-[10px] font-bold text-slate-700 uppercase tracking-wider flex items-center justify-between">
+                  <div class="flex items-center gap-1.5">
+                    <Calendar :size="12" class="text-amber-600" />
+                    <span>Jangka Waktu Cicilan</span>
+                  </div>
+                  <span class="text-[9px] font-normal text-slate-400">Tahun menyesuaikan</span>
+                </div>
+
+                <div class="grid grid-cols-2 gap-2.5">
+                  <!-- Dari Bulan & Tahun -->
+                  <div>
+                    <label class="block text-[9px] font-semibold text-slate-500 mb-1">
+                      Mulai Dari Bulan & Tahun
+                    </label>
+                    <div class="grid grid-cols-5 gap-1">
+                      <select
+                        v-model.number="form.start_month"
+                        @change="onTenorOrStartChange"
+                        class="col-span-3 bg-slate-50 border border-slate-200 focus:border-amber-500 rounded-lg px-2 py-1.5 text-xs text-slate-800 transition outline-none cursor-pointer"
+                      >
+                        <option v-for="(name, num) in monthNames" :key="num" :value="Number(num)">
+                          {{ name.slice(0, 3) }}
+                        </option>
+                      </select>
+                      <input
+                        v-model.number="form.start_year"
+                        @input="onTenorOrStartChange"
+                        type="number"
+                        min="2020"
+                        max="2050"
+                        class="col-span-2 bg-slate-50 border border-slate-200 focus:border-amber-500 rounded-lg px-1 py-1.5 text-xs font-sans text-slate-800 transition outline-none text-center"
+                      />
+                    </div>
+                  </div>
+
+                  <!-- Hingga Bulan & Tahun (Menyesuaikan Otomatis) -->
+                  <div>
+                    <div class="flex items-center justify-between mb-1">
+                      <label class="block text-[9px] font-semibold text-slate-500">
+                        Hingga Bulan & Tahun
+                      </label>
+                      <span class="text-[8px] font-bold text-emerald-600 bg-emerald-50 px-1 rounded border border-emerald-200/60">Auto</span>
+                    </div>
+                    <div class="grid grid-cols-5 gap-1">
+                      <select
+                        v-model.number="form.end_month"
+                        @change="onEndPeriodChange"
+                        class="col-span-3 bg-slate-50 border border-slate-200 focus:border-amber-500 rounded-lg px-2 py-1.5 text-xs text-slate-800 transition outline-none cursor-pointer"
+                      >
+                        <option v-for="(name, num) in monthNames" :key="num" :value="Number(num)">
+                          {{ name.slice(0, 3) }}
+                        </option>
+                      </select>
+                      <input
+                        v-model.number="form.end_year"
+                        @input="onEndPeriodChange"
+                        type="number"
+                        min="2020"
+                        max="2050"
+                        class="col-span-2 bg-slate-50 border border-slate-200 focus:border-amber-500 rounded-lg px-1 py-1.5 text-xs font-sans text-slate-800 transition outline-none text-center"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <div v-if="periodSummary" class="text-[10px] text-amber-900 bg-amber-50/80 px-2.5 py-1.5 rounded-lg border border-amber-200/60 flex items-center justify-between">
+                  <span>Periode: <strong>{{ periodSummary }}</strong></span>
+                  <span class="font-bold text-amber-700">{{ form.total_installments }}x angsuran</span>
+                </div>
+              </div>
+
+              <!-- Baris 3: Status Sisa & Pokok -->
+              <div v-if="form.total_installments" class="text-[10px] text-slate-600 font-sans flex items-center justify-between px-1">
+                <span>
+                  Sisa: <strong class="text-amber-700">{{ Math.max(0, (form.total_installments || 0) - (form.paid_installments || 0)) }} kali lagi</strong> lunas
+                </span>
+                <span v-if="form.amount" class="text-slate-400">
+                  Est. sisa: {{ formatRupiah(Math.max(0, (form.total_installments || 0) - (form.paid_installments || 0)) * (form.amount || 0)) }}
+                </span>
+              </div>
             </div>
           </div>
 
@@ -544,7 +652,7 @@ import { ref, computed, watch } from 'vue';
 import { useForm, router, Link } from '@inertiajs/vue3';
 import AppLayout from '@/Layouts/AppLayout.vue';
 import CategoryIcon from '@/Components/CategoryIcon.vue';
-import { Plus, Check, Edit2, Trash2, X, ChevronDown, ReceiptText, ArrowRight } from 'lucide-vue-next';
+import { Plus, Check, Edit2, Trash2, X, ChevronDown, ReceiptText, ArrowRight, Calendar } from 'lucide-vue-next';
 import { formatRupiah, formatThousands, parseThousands } from '@/Utils/formatters';
 
 const props = defineProps({
@@ -650,6 +758,52 @@ const form = useForm({
   has_installments: false,
   total_installments: null,
   paid_installments: 0,
+  start_month: props.period.month,
+  start_year: props.period.year,
+  end_month: null,
+  end_year: null,
+});
+
+// Hitung bulan & tahun selesai secara otomatis berdasarkan tenor
+function computeEndPeriod(startM, startY, tenor) {
+  if (!startM || !startY || !tenor || tenor < 1) return null;
+  const totalMonths = (startY * 12 + (startM - 1)) + (tenor - 1);
+  return {
+    month: (totalMonths % 12) + 1,
+    year: Math.floor(totalMonths / 12)
+  };
+}
+
+function onTenorOrStartChange() {
+  if (form.start_month && form.start_year && form.total_installments && form.total_installments > 0) {
+    const res = computeEndPeriod(form.start_month, form.start_year, form.total_installments);
+    if (res) {
+      form.end_month = res.month;
+      form.end_year = res.year;
+    }
+  }
+}
+
+// Jika user memilih bulan/tahun akhir secara manual, tenor otomatis menyesuaikan
+function onEndPeriodChange() {
+  if (form.start_month && form.start_year && form.end_month && form.end_year) {
+    const startTotal = form.start_year * 12 + (form.start_month - 1);
+    const endTotal = form.end_year * 12 + (form.end_month - 1);
+    const diff = endTotal - startTotal + 1;
+    if (diff > 0) {
+      form.total_installments = diff;
+    }
+  }
+}
+
+const periodSummary = computed(() => {
+  if (!form.has_installments || !form.start_month || !form.start_year) return null;
+  const startName = monthNames[form.start_month] || '';
+  if (form.end_month && form.end_year) {
+    const endName = monthNames[form.end_month] || '';
+    return `${startName} ${form.start_year} s/d ${endName} ${form.end_year}`;
+  }
+  return `${startName} ${form.start_year}`;
 });
 
 function onCategoryChange() {
@@ -657,6 +811,8 @@ function onCategoryChange() {
   const selected = props.categories.find(c => c.id === form.category_id);
   if (selected && /cicil|pinjam/i.test(selected.name)) {
     form.has_installments = true;
+    if (!form.start_month) form.start_month = props.period.month;
+    if (!form.start_year) form.start_year = props.period.year;
   }
 }
 
@@ -681,6 +837,10 @@ function openAddModal() {
   form.has_installments = false;
   form.total_installments = null;
   form.paid_installments = 0;
+  form.start_month = props.period.month;
+  form.start_year = props.period.year;
+  form.end_month = null;
+  form.end_year = null;
   formattedAmount.value = '';
   form.due_day = 5;
   if (props.categories.length > 0) {
@@ -698,9 +858,17 @@ function editObligation(item) {
   form.category_id = item.category_id;
   form.due_day = item.due_day;
   form.notes = item.notes || '';
-  form.has_installments = Boolean(item.total_installments);
+  form.has_installments = Boolean(item.total_installments || item.start_month);
   form.total_installments = item.total_installments || null;
   form.paid_installments = item.paid_installments || 0;
+  form.start_month = item.start_month || props.period.month;
+  form.start_year = item.start_year || props.period.year;
+  form.end_month = item.end_month || null;
+  form.end_year = item.end_year || null;
+
+  if (form.has_installments && form.start_month && form.start_year && form.total_installments && (!form.end_month || !form.end_year)) {
+    onTenorOrStartChange();
+  }
   isModalOpen.value = true;
 }
 
@@ -717,6 +885,10 @@ function submitForm() {
   if (!form.has_installments) {
     form.total_installments = null;
     form.paid_installments = 0;
+    form.start_month = null;
+    form.start_year = null;
+    form.end_month = null;
+    form.end_year = null;
   }
 
   if (editingItem.value) {

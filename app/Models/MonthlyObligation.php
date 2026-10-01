@@ -20,6 +20,10 @@ class MonthlyObligation extends Model
         'due_day',
         'total_installments',
         'paid_installments',
+        'start_month',
+        'start_year',
+        'end_month',
+        'end_year',
         'is_active',
         'notes',
     ];
@@ -42,6 +46,10 @@ class MonthlyObligation extends Model
             'due_day' => 'integer',
             'total_installments' => 'integer',
             'paid_installments' => 'integer',
+            'start_month' => 'integer',
+            'start_year' => 'integer',
+            'end_month' => 'integer',
+            'end_year' => 'integer',
             'is_active' => 'boolean',
         ];
     }

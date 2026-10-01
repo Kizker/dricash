@@ -222,6 +222,71 @@ class FinancialWorkflowTest extends TestCase
         ]);
     }
 
+    public function test_installment_obligation_with_start_and_end_period_range()
+    {
+        Carbon::setTestNow(Carbon::create(2026, 10, 1, 10, 0, 0));
+
+        // Create obligation with start & end period
+        $response = $this->actingAs($this->user)->post('/obligations', [
+            'name' => 'Cicilan Smartphone',
+            'amount' => 500000.00,
+            'category_id' => $this->expenseCat->id,
+            'due_day' => 5,
+            'total_installments' => 6,
+            'paid_installments' => 1,
+            'start_month' => 10,
+            'start_year' => 2026,
+            'end_month' => 3,
+            'end_year' => 2027,
+        ]);
+        $response->assertRedirect();
+
+        $this->assertDatabaseHas('monthly_obligations', [
+            'name' => 'Cicilan Smartphone',
+            'start_month' => 10,
+            'start_year' => 2026,
+            'end_month' => 3,
+            'end_year' => 2027,
+            'total_installments' => 6,
+        ]);
+
+        $ob = MonthlyObligation::where('name', 'Cicilan Smartphone')->first();
+
+        // Check index response for October 2026
+        $indexRes = $this->actingAs($this->user)->get('/obligations?month=10&year=2026');
+        $indexRes->assertOk();
+        $indexRes->assertInertia(fn ($page) => $page
+            ->component('Obligations/Index')
+            ->where('obligations.0.start_month', 10)
+            ->where('obligations.0.start_year', 2026)
+            ->where('obligations.0.end_month', 3)
+            ->where('obligations.0.end_year', 2027)
+            ->where('obligations.0.is_within_period', true)
+        );
+
+        // Update obligation
+        $updateRes = $this->actingAs($this->user)->put("/obligations/{$ob->id}", [
+            'name' => 'Cicilan Smartphone Pro',
+            'amount' => 550000.00,
+            'category_id' => $this->expenseCat->id,
+            'due_day' => 10,
+            'total_installments' => 12,
+            'paid_installments' => 2,
+            'start_month' => 10,
+            'start_year' => 2026,
+            'end_month' => 9,
+            'end_year' => 2027,
+            'is_active' => true,
+        ]);
+        $updateRes->assertRedirect();
+
+        $ob->refresh();
+        $this->assertEquals('Cicilan Smartphone Pro', $ob->name);
+        $this->assertEquals(9, $ob->end_month);
+        $this->assertEquals(2027, $ob->end_year);
+        $this->assertEquals(12, $ob->total_installments);
+    }
+
     public function test_user_can_update_growth_target()
     {
         $originalNetWorth = $this->user->initial_net_worth;

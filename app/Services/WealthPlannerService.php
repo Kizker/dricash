@@ -104,11 +104,28 @@ class WealthPlannerService
             ->sum('amount');
 
         // 2. Monthly Obligations & Ring-Fencing
+        $periodKey = $year * 12 + $month;
+
         $activeObligations = MonthlyObligation::with(['category'])
             ->where('user_id', $user->id)
             ->where('is_active', true)
             ->orderBy('due_day', 'asc')
-            ->get();
+            ->get()
+            ->filter(function ($obligation) use ($periodKey) {
+                if ($obligation->start_year && $obligation->start_month) {
+                    $startKey = $obligation->start_year * 12 + $obligation->start_month;
+                    if ($periodKey < $startKey) {
+                        return false;
+                    }
+                }
+                if ($obligation->end_year && $obligation->end_month) {
+                    $endKey = $obligation->end_year * 12 + $obligation->end_month;
+                    if ($periodKey > $endKey) {
+                        return false;
+                    }
+                }
+                return true;
+            });
 
         $totalObligationsAmount = (float) $activeObligations->sum('amount');
 

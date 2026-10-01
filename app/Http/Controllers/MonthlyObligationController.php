@@ -36,11 +36,13 @@ class MonthlyObligationController extends Controller
             ->get()
             ->keyBy('monthly_obligation_id');
 
+        $periodKey = $year * 12 + $month;
+
         $obligations = MonthlyObligation::with(['category'])
             ->where('user_id', $user->id)
             ->orderBy('due_day', 'asc')
             ->get()
-            ->map(function ($ob) use ($payments) {
+            ->map(function ($ob) use ($payments, $periodKey) {
                 $payment = $payments->get($ob->id);
                 $isPaid = (bool) ($payment?->is_paid ?? false);
 
@@ -48,6 +50,19 @@ class MonthlyObligationController extends Controller
                 $paidInst = (int) ($ob->paid_installments ?? 0);
                 $remainingInst = $totalInst ? max(0, $totalInst - $paidInst) : null;
                 $remainingAmount = $totalInst ? ($remainingInst * (float) $ob->amount) : null;
+
+                $startKey = ($ob->start_year && $ob->start_month) ? ($ob->start_year * 12 + $ob->start_month) : null;
+                $endKey = ($ob->end_year && $ob->end_month) ? ($ob->end_year * 12 + $ob->end_month) : null;
+                $isWithinPeriod = (!$startKey || $periodKey >= $startKey) && (!$endKey || $periodKey <= $endKey);
+                $isBeforeStart = $startKey && ($periodKey < $startKey);
+                $isAfterEnd = $endKey && ($periodKey > $endKey);
+
+                $periodRange = null;
+                if ($ob->start_month && $ob->start_year && $ob->end_month && $ob->end_year) {
+                    $startFormatted = Carbon::createFromDate($ob->start_year, $ob->start_month, 1)->translatedFormat('M Y');
+                    $endFormatted = Carbon::createFromDate($ob->end_year, $ob->end_month, 1)->translatedFormat('M Y');
+                    $periodRange = "{$startFormatted} - {$endFormatted}";
+                }
 
                 return [
                     'id' => $ob->id,
@@ -59,7 +74,15 @@ class MonthlyObligationController extends Controller
                     'paid_installments' => $paidInst,
                     'remaining_installments' => $remainingInst,
                     'remaining_amount' => $remainingAmount,
-                    'is_installment' => !is_null($totalInst) || (str_contains(strtolower($ob->category?->name ?? ''), 'cicilan')),
+                    'start_month' => $ob->start_month,
+                    'start_year' => $ob->start_year,
+                    'end_month' => $ob->end_month,
+                    'end_year' => $ob->end_year,
+                    'period_range' => $periodRange,
+                    'is_within_period' => $isWithinPeriod,
+                    'is_before_start' => $isBeforeStart,
+                    'is_after_end' => $isAfterEnd,
+                    'is_installment' => !is_null($totalInst) || !is_null($ob->start_month) || (str_contains(strtolower($ob->category?->name ?? ''), 'cicilan')),
                     'is_active' => (bool) $ob->is_active,
                     'notes' => $ob->notes,
                     'is_paid' => $isPaid,
@@ -93,6 +116,10 @@ class MonthlyObligationController extends Controller
             'due_day' => ['required', 'integer', 'min:1', 'max:31'],
             'total_installments' => ['nullable', 'integer', 'min:1', 'max:360'],
             'paid_installments' => ['nullable', 'integer', 'min:0'],
+            'start_month' => ['nullable', 'integer', 'min:1', 'max:12'],
+            'start_year' => ['nullable', 'integer', 'min:2020', 'max:2099'],
+            'end_month' => ['nullable', 'integer', 'min:1', 'max:12'],
+            'end_year' => ['nullable', 'integer', 'min:2020', 'max:2099'],
             'notes' => ['nullable', 'string'],
         ]);
 
@@ -105,6 +132,10 @@ class MonthlyObligationController extends Controller
             'due_day' => $validated['due_day'],
             'total_installments' => $validated['total_installments'] ?? null,
             'paid_installments' => $validated['paid_installments'] ?? 0,
+            'start_month' => $validated['start_month'] ?? null,
+            'start_year' => $validated['start_year'] ?? null,
+            'end_month' => $validated['end_month'] ?? null,
+            'end_year' => $validated['end_year'] ?? null,
             'is_active' => true,
             'notes' => $validated['notes'] ?? null,
         ]);
@@ -125,6 +156,10 @@ class MonthlyObligationController extends Controller
             'due_day' => ['required', 'integer', 'min:1', 'max:31'],
             'total_installments' => ['nullable', 'integer', 'min:1', 'max:360'],
             'paid_installments' => ['nullable', 'integer', 'min:0'],
+            'start_month' => ['nullable', 'integer', 'min:1', 'max:12'],
+            'start_year' => ['nullable', 'integer', 'min:2020', 'max:2099'],
+            'end_month' => ['nullable', 'integer', 'min:1', 'max:12'],
+            'end_year' => ['nullable', 'integer', 'min:2020', 'max:2099'],
             'is_active' => ['boolean'],
             'notes' => ['nullable', 'string'],
         ]);
