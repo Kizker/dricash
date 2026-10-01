@@ -274,7 +274,7 @@
             class="text-sm sm:text-base font-sans font-bold"
             :class="growth.is_on_track ? 'text-emerald-600' : 'text-rose-600'"
           >
-            +{{ growth.projected_percentage }}% ({{ growth.is_on_track ? 'Sesuai Rencana' : 'Perlu Penghematan' }})
+            {{ Number(growth.projected_percentage) >= 0 ? '+' : '' }}{{ growth.projected_percentage }}% ({{ growth.is_on_track ? 'Sesuai Rencana' : 'Perlu Penghematan' }})
           </div>
         </div>
       </div>

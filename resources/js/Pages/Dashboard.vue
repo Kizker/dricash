@@ -75,6 +75,24 @@
           <span class="truncate">Hari ke-{{ metrics.period.today_day }} (Sisa {{ metrics.period.days_remaining }} hari)</span>
         </div>
 
+        <!-- Previous Month Surplus Saved Notice -->
+        <div 
+          v-if="metrics.previous_month?.surplus > 0 || metrics.daily_budget?.is_using_starting_balance"
+          class="mt-2.5 px-3 py-1.5 rounded-xl bg-white/10 backdrop-blur-md border border-white/15 flex items-center gap-1.5 text-[10px] min-[360px]:text-[11px] text-emerald-100 shadow-2xs"
+        >
+          <Sparkles :size="12" class="text-amber-300 shrink-0" />
+          <span class="truncate">
+            <template v-if="metrics.previous_month?.surplus > 0">
+              Sisa <strong>{{ formatRupiah(metrics.previous_month.surplus) }}</strong> bulan lalu aman di Tabungan.
+            </template>
+            <template v-else>
+              Saldo sisa bulan lalu aman di Tabungan.
+            </template>
+            <span v-if="metrics.daily_budget?.is_using_starting_balance" class="opacity-90">
+              Jatah harian aktif dari saldo bebas.
+            </span>
+          </span>
+        </div>
 
         <!-- Inflow, Outflow & Sisa Arus Kas Ribbon (Fluid Responsive & Human-Centric) -->
         <div class="mt-3.5 pt-3 border-t border-white/12 space-y-2">
@@ -108,12 +126,20 @@
           <div class="bg-black/20 backdrop-blur-md rounded-xl min-[360px]:rounded-2xl p-2.5 min-[360px]:p-3 border border-white/15 min-w-0">
             <div class="flex items-center justify-between gap-2">
               <div class="min-w-0 flex items-center space-x-1.5">
-                <span class="w-2 h-2 rounded-full bg-emerald-400 shrink-0 shadow-2xs"></span>
+                <span 
+                  class="w-2 h-2 rounded-full shrink-0 shadow-2xs"
+                  :class="(metrics.cashflow.total_income - metrics.cashflow.total_expenses) >= 0 ? 'bg-emerald-400' : 'bg-rose-400'"
+                ></span>
                 <span class="text-[10px] min-[360px]:text-[11px] font-bold text-emerald-100 uppercase tracking-wider truncate">
                   Sisa Arus Kas
                 </span>
-                <span class="hidden min-[400px]:inline-block px-1.5 py-0.2 rounded text-[8px] bg-emerald-400/20 text-emerald-200 font-bold">
-                  Surplus
+                <span 
+                  class="hidden min-[400px]:inline-block px-1.5 py-0.2 rounded text-[8px] font-bold"
+                  :class="(metrics.cashflow.total_income - metrics.cashflow.total_expenses) >= 0 
+                    ? 'bg-emerald-400/20 text-emerald-200' 
+                    : 'bg-rose-400/20 text-rose-200'"
+                >
+                  {{ (metrics.cashflow.total_income - metrics.cashflow.total_expenses) >= 0 ? 'Surplus' : 'Defisit' }}
                 </span>
               </div>
               
@@ -121,8 +147,18 @@
                 <span class="text-xs min-[360px]:text-sm font-black text-white tracking-tight font-sans">
                   {{ isBalanceVisible ? formatRupiah(metrics.cashflow.total_income - metrics.cashflow.total_expenses) : '••••••' }}
                 </span>
-                <span class="text-[9px] min-[360px]:text-[10px] font-bold text-emerald-300 bg-emerald-950/60 px-1.5 py-0.5 rounded-md border border-emerald-400/30">
-                  {{ netCashflowPercent }}%
+                <span 
+                  class="text-[9px] min-[360px]:text-[10px] font-bold px-1.5 py-0.5 rounded-md border"
+                  :class="(metrics.cashflow.total_income - metrics.cashflow.total_expenses) >= 0
+                    ? 'text-emerald-300 bg-emerald-950/60 border-emerald-400/30'
+                    : 'text-rose-200 bg-rose-950/60 border-rose-400/30'"
+                >
+                  <template v-if="metrics.cashflow.total_income > 0">
+                    {{ netCashflowPercent }}%
+                  </template>
+                  <template v-else>
+                    {{ (metrics.cashflow.total_income - metrics.cashflow.total_expenses) >= 0 ? '0%' : 'Berjalan' }}
+                  </template>
                 </span>
               </div>
             </div>
@@ -130,7 +166,10 @@
             <!-- Micro Retention Progress Line -->
             <div class="mt-2 w-full h-1.5 bg-white/10 rounded-full overflow-hidden">
               <div
-                class="h-full bg-gradient-to-r from-emerald-400 to-teal-300 rounded-full transition-all duration-500"
+                class="h-full rounded-full transition-all duration-500"
+                :class="(metrics.cashflow.total_income - metrics.cashflow.total_expenses) >= 0
+                  ? 'bg-gradient-to-r from-emerald-400 to-teal-300'
+                  : 'bg-rose-500'"
                 :style="{ width: `${Math.min(100, Math.max(0, netCashflowPercent))}%` }"
               ></div>
             </div>
@@ -243,7 +282,8 @@ import {
   ArrowDownLeft,
   ArrowUpRight,
   Eye,
-  EyeOff
+  EyeOff,
+  Sparkles
 } from 'lucide-vue-next';
 import { formatRupiah } from '@/Utils/formatters';
 

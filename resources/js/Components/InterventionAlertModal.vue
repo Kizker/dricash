@@ -28,14 +28,14 @@
           <div class="text-center">
             <span class="text-[10px] text-slate-500 uppercase font-semibold">Target Anda</span>
             <div class="text-lg font-extrabold font-sans text-emerald-600">
-              +{{ interventionData?.target_percentage }}%
+              {{ Number(interventionData?.target_percentage) >= 0 ? '+' : '' }}{{ interventionData?.target_percentage }}%
             </div>
           </div>
           <div class="text-slate-400 font-bold text-lg">➔</div>
           <div class="text-center">
             <span class="text-[10px] text-rose-600 uppercase font-semibold">Proyeksi Baru</span>
             <div class="text-lg font-extrabold font-sans text-rose-600">
-              +{{ interventionData?.new_projected_percentage }}%
+              {{ Number(interventionData?.new_projected_percentage) >= 0 ? '+' : '' }}{{ interventionData?.new_projected_percentage }}%
             </div>
           </div>
         </div>

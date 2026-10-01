@@ -60,7 +60,7 @@
             class="text-sm sm:text-base font-extrabold font-sans"
             :class="growth.is_on_track ? 'text-emerald-600' : 'text-rose-600'"
           >
-            +{{ growth.projected_percentage }}%
+            {{ Number(growth.projected_percentage) >= 0 ? '+' : '' }}{{ growth.projected_percentage }}%
           </div>
           <div class="text-[11px] sm:text-xs font-bold font-sans text-slate-700 whitespace-nowrap">{{ formatRupiah(growth.projected_net_worth) }}</div>
         </div>
@@ -72,7 +72,7 @@
         <div class="flex items-center justify-between text-xs gap-2">
           <span class="text-slate-500 text-[11px] sm:text-xs font-medium truncate">
             {{ growth.is_on_track 
-              ? 'Melebihi target' 
+              ? (growth.is_using_starting_balance ? 'Sesuai alokasi saldo' : 'Melebihi target') 
               : 'Perlu penghematan' }}
           </span>
           <span 
@@ -98,7 +98,7 @@
         <div class="flex justify-between items-center text-[10px] sm:text-[11px] text-slate-400 font-sans pt-0.5">
           <span>Target: <strong class="text-slate-600">+{{ growth.target_percentage }}%</strong></span>
           <span class="font-bold" :class="growth.is_on_track ? 'text-emerald-700' : 'text-rose-700'">
-            Proyeksi: +{{ growth.projected_percentage }}%
+            Proyeksi: {{ Number(growth.projected_percentage) >= 0 ? '+' : '' }}{{ growth.projected_percentage }}%
           </span>
         </div>
       </div>
@@ -136,10 +136,13 @@ const props = defineProps({
 
 const surplusLabel = computed(() => {
   if (props.growth.is_on_track) {
+    if (props.growth.is_using_starting_balance) {
+      return 'Target Tabungan Terjaga';
+    }
     const target = Number(props.growth.target_percentage) || 0;
     const projected = Number(props.growth.projected_percentage) || 0;
     const diff = Math.max(0, projected - target);
-    return `+${diff.toFixed(1)}% di atas target`;
+    return diff > 0 ? `+${diff.toFixed(1)}% di atas target` : 'Sesuai Target';
   } else {
     const gap = props.growth.gap_amount || 0;
     return gap > 0 ? `Kurang ${formatRupiah(gap)}` : 'Di bawah target';

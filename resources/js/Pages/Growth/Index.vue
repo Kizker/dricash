@@ -189,7 +189,7 @@
                   Proyeksi
                 </span>
                 <span class="text-[9px] font-bold">
-                  +{{ metrics.projected_percentage }}%
+                  {{ Number(metrics.projected_percentage) >= 0 ? '+' : '' }}{{ metrics.projected_percentage }}%
                 </span>
               </div>
               <div class="text-xs min-[360px]:text-sm font-black font-sans mt-0.5 truncate">
@@ -227,7 +227,7 @@
               {{ formatRupiah(metrics.projected_net_worth) }}
             </div>
             <div class="text-[10px] font-sans truncate" :class="metrics.is_on_track ? 'text-emerald-600' : 'text-rose-600'">
-              +{{ metrics.projected_percentage }}% ({{ metrics.is_on_track ? 'Aman' : 'Rendah' }})
+              {{ Number(metrics.projected_percentage) >= 0 ? '+' : '' }}{{ metrics.projected_percentage }}% ({{ metrics.is_on_track ? 'Aman' : 'Rendah' }})
             </div>
           </div>
         </div>

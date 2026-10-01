@@ -164,6 +164,23 @@ class WealthPlannerService
                 ? $growthTarget->starting_net_worth 
                 : ($user->initial_net_worth ?? 0.0));
         
+        // Akumulasi surplus dari bulan kemarin yang tersimpan aman ke dalam tabungan & kekayaan bersih
+        $prevMonthDate = $startDate->copy()->subMonth();
+        $prevMonthStartStr = $prevMonthDate->copy()->startOfMonth()->format('Y-m-d');
+        $prevMonthEndStr = $prevMonthDate->copy()->endOfMonth()->format('Y-m-d');
+
+        $prevMonthIncome = (float) Transaction::where('user_id', $user->id)
+            ->whereBetween('transaction_date', [$prevMonthStartStr, $prevMonthEndStr])
+            ->where('type', 'income')
+            ->sum('amount');
+
+        $prevMonthExpenses = (float) Transaction::where('user_id', $user->id)
+            ->whereBetween('transaction_date', [$prevMonthStartStr, $prevMonthEndStr])
+            ->where('type', 'expense')
+            ->sum('amount');
+
+        $prevMonthSurplus = max(0, $prevMonthIncome - $prevMonthExpenses);
+
         // Target tabungan: menyesuaikan berdasarkan uang yang dipunya (saldo awal, atau total uang masuk)
         $baseWealthForGrowth = $startingNetWorth > 0 ? $startingNetWorth : max(0, $totalIncome);
         $calculatedGrowthAmount = ($baseWealthForGrowth > 0) ? ($baseWealthForGrowth * ($targetGrowthPercentage / 100)) : 0;
@@ -195,11 +212,31 @@ class WealthPlannerService
         $totalAllExpenses = $totalDailyExpensesThisMonth + $totalPaidObligations;
 
         // 5. Dynamic Daily Budgeting & Rollover Calculation
-        $basePool = max(0, $totalIncome - $totalObligationsAmount - $targetSavingsAmount);
+        // Dana bebas dari saldo awal (setelah dipisahkan untuk seluruh kewajiban bulanan dan target tabungan yang ingin dicapai)
+        $freeStartingBalance = max(0, $startingNetWorth - $totalObligationsAmount - $targetSavingsAmount);
+
+        // Sumber dana untuk jatah harian:
+        // Jika pemasukan bulan ini sudah ada dan mencukupi kewajiban + target tabungan: gunakan basis pemasukan.
+        // Jika belum ada pemasukan (awal bulan) atau pemasukan belum menutup kewajiban: gunakan sisa saldo bebas dari saldo awal agar jatah harian tidak Rp 0.
+        $isUsingStartingBalance = false;
+        if ($totalIncome > 0) {
+            $incomePool = max(0, $totalIncome - $totalObligationsAmount - $targetSavingsAmount);
+            if ($incomePool > 0) {
+                $basePool = $incomePool;
+            } else {
+                $basePool = max($freeStartingBalance, max(0, ($startingNetWorth + $totalIncome) - $totalObligationsAmount - $targetSavingsAmount));
+                $isUsingStartingBalance = ($freeStartingBalance > 0 && $incomePool <= 0);
+            }
+        } else {
+            // Awal bulan: belum ada pemasukan baru, gunakan dana bebas dari saldo sisa bulan kemarin
+            $basePool = $freeStartingBalance;
+            $isUsingStartingBalance = ($freeStartingBalance > 0);
+        }
+
         $baselineDailyAllowance = $daysInMonth > 0 ? ($basePool / $daysInMonth) : 0;
 
         // Remaining pool for today and upcoming days (auto mode based on money owned)
-        $remainingPool = max(0, $totalIncome - $totalObligationsAmount - $targetSavingsAmount - $pastExpenses);
+        $remainingPool = max(0, $basePool - $pastExpenses);
         $autoDailyBudget = $daysRemaining > 0 ? ($remainingPool / $daysRemaining) : 0;
 
         $dailyBudgetMode = $user->daily_budget_mode ?? 'auto';
@@ -219,21 +256,44 @@ class WealthPlannerService
         // 6. Net Worth & Growth Status
         $currentNetWorth = $startingNetWorth + ($totalIncome - $totalAllExpenses);
         
-        // Projected End of Month Net Worth based on active income and committed obligations & daily expenses:
-        $projectedEndOfMonthNetWorth = $startingNetWorth + $totalIncome - $totalObligationsAmount - $totalDailyExpensesThisMonth;
-        
         $currentGrowthPercentage = ($startingNetWorth > 0) 
             ? round((($currentNetWorth - $startingNetWorth) / $startingNetWorth) * 100, 2)
             : 0;
 
-        $projectedGrowthPercentage = ($startingNetWorth > 0)
-            ? round((($projectedEndOfMonthNetWorth - $startingNetWorth) / $startingNetWorth) * 100, 2)
-            : 0;
-
         $targetRequiredNetWorth = $startingNetWorth + $targetSavingsAmount;
-        $isGrowthOnTrack = ($targetSavingsAmount > 0) 
-            ? ($projectedEndOfMonthNetWorth >= $targetRequiredNetWorth)
-            : ($projectedGrowthPercentage >= $targetGrowthPercentage);
+
+        // Projected End of Month Net Worth
+        if ($totalIncome > 0) {
+            $projectedEndOfMonthNetWorth = $startingNetWorth + $totalIncome - $totalObligationsAmount - $totalDailyExpensesThisMonth;
+            $projectedGrowthPercentage = ($startingNetWorth > 0)
+                ? round((($projectedEndOfMonthNetWorth - $startingNetWorth) / $startingNetWorth) * 100, 2)
+                : 0;
+            $isGrowthOnTrack = ($targetSavingsAmount > 0) 
+                ? ($projectedEndOfMonthNetWorth >= $targetRequiredNetWorth)
+                : ($projectedGrowthPercentage >= $targetGrowthPercentage);
+            $gapAmount = max(0, $targetRequiredNetWorth - $projectedEndOfMonthNetWorth);
+        } else {
+            // Ketika belum ada pemasukan di awal bulan, evaluasi berdasarkan kedisiplinan jatah harian:
+            // Target tabungan sudah diamankan di luar jatah harian (freeStartingBalance).
+            // Selama pengeluaran hari ini dan hari-hari sebelumnya tidak overbudget, tabungan aman sesuai rencana.
+            $expectedMaxExpenseToDate = ($baselineDailyAllowance * max(0, $todayDay - 1)) + $todayDailyBudget;
+            $actualExpenseToDate = $pastExpenses + $spentToday;
+            $isBudgetDisciplined = ($actualExpenseToDate <= max(1, $expectedMaxExpenseToDate));
+
+            if ($freeStartingBalance > 0 && $isBudgetDisciplined) {
+                $isGrowthOnTrack = true;
+                $projectedEndOfMonthNetWorth = $targetRequiredNetWorth;
+                $projectedGrowthPercentage = $targetGrowthPercentage;
+                $gapAmount = 0.0;
+            } else {
+                $projectedEndOfMonthNetWorth = $startingNetWorth - $totalObligationsAmount - $totalDailyExpensesThisMonth;
+                $projectedGrowthPercentage = ($startingNetWorth > 0)
+                    ? round((($projectedEndOfMonthNetWorth - $startingNetWorth) / $startingNetWorth) * 100, 2)
+                    : 0;
+                $isGrowthOnTrack = false;
+                $gapAmount = max(0, $targetRequiredNetWorth - $projectedEndOfMonthNetWorth);
+            }
+        }
 
         // 7. Recent Transactions (last 10 indexed fetch)
         $recentTransactions = Transaction::with(['category', 'monthlyObligation'])
@@ -265,12 +325,19 @@ class WealthPlannerService
                 'days_remaining' => $daysRemaining,
                 'is_current_month' => $isCurrentMonth,
             ],
+            'previous_month' => [
+                'month_name' => $prevMonthDate->translatedFormat('F Y'),
+                'income' => round($prevMonthIncome, 2),
+                'expenses' => round($prevMonthExpenses, 2),
+                'surplus' => round($prevMonthSurplus, 2),
+            ],
             'cashflow' => [
                 'total_income' => $totalIncome,
                 'total_expenses' => $totalAllExpenses,
                 'net_cashflow' => $totalIncome - $totalAllExpenses,
                 'savings_target' => $targetSavingsAmount,
                 'projected_surplus' => max(0, $totalIncome - $totalObligationsAmount - $totalDailyExpensesThisMonth),
+                'previous_month_surplus' => round($prevMonthSurplus, 2),
             ],
             'obligations' => [
                 'total_amount' => $totalObligationsAmount,
@@ -293,6 +360,8 @@ class WealthPlannerService
                 'rollover_delta' => round($rolloverDelta, 2),
                 'rollover_type' => $rolloverDelta >= 0 ? 'reward' : 'adjusted',
                 'past_expenses' => round($pastExpenses, 2),
+                'is_using_starting_balance' => $isUsingStartingBalance,
+                'free_starting_balance' => round($freeStartingBalance, 2),
             ],
             'growth' => [
                 'starting_net_worth' => $startingNetWorth,
@@ -303,7 +372,9 @@ class WealthPlannerService
                 'projected_percentage' => $projectedGrowthPercentage,
                 'is_on_track' => $isGrowthOnTrack,
                 'target_savings_amount' => $targetSavingsAmount,
-                'gap_amount' => round(max(0, $targetRequiredNetWorth - $projectedEndOfMonthNetWorth), 2),
+                'gap_amount' => round($gapAmount, 2),
+                'is_using_starting_balance' => $isUsingStartingBalance,
+                'previous_month_surplus' => round($prevMonthSurplus, 2),
             ],
             'recent_transactions' => $recentTransactions,
             'charts' => [
