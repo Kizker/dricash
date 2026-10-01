@@ -87,7 +87,7 @@
             {{ cashflow.net_cashflow >= 0 ? 'Surplus' : 'Defisit' }}
           </span>
           <span class="text-[10px] text-slate-400 block font-medium mt-0.5">
-            Tabungan: {{ cashflow.total_income > 0 ? Math.round((cashflow.net_cashflow / cashflow.total_income) * 100) : 0 }}%
+            Tabungan: {{ cashflow.total_income > 0 ? Math.round((cashflow.monthly_net_cashflow / cashflow.total_income) * 100) : 0 }}%
           </span>
         </div>
       </div>
@@ -177,7 +177,7 @@
           {{ formatRupiah(cashflow.net_cashflow) }}
         </div>
         <div class="text-[11px] text-slate-500 mt-0.5 font-sans truncate">
-          Savings Rate: {{ cashflow.total_income > 0 ? Math.round((cashflow.net_cashflow / cashflow.total_income) * 100) : 0 }}%
+          Savings Rate: {{ cashflow.total_income > 0 ? Math.round((cashflow.monthly_net_cashflow / cashflow.total_income) * 100) : 0 }}%
         </div>
       </div>
 

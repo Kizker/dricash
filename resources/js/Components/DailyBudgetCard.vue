@@ -49,9 +49,6 @@
         <p v-if="data.mode === 'manual'" class="text-[11px] sm:text-xs text-slate-500 mt-0.5">
           Jatah tetap yang Anda tentukan sendiri
         </p>
-        <p v-else-if="data.is_using_starting_balance" class="text-[11px] sm:text-xs text-emerald-600 font-medium mt-0.5">
-          Menyesuaikan dari sisa saldo bebas bulan lalu (Kewajiban & Tabungan aman)
-        </p>
         <p v-else class="text-[11px] sm:text-xs text-slate-500 mt-0.5">
           Menyesuaikan otomatis dengan sisa uang & tabungan
         </p>
@@ -164,7 +161,7 @@
           </div>
           <div class="min-w-0 flex-1">
             <div class="text-[9px] sm:text-[10px] uppercase font-bold text-slate-500">
-              {{ data.is_using_starting_balance ? 'Modal Saldo Bebas' : 'Jatah Awal Bulan' }}
+              Jatah Awal Bulan
             </div>
             <div class="text-xs sm:text-sm font-sans font-bold text-slate-800 truncate mt-0.5">
               {{ formatRupiah(data.baseline_allowance) }} / hari

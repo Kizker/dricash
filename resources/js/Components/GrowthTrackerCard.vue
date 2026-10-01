@@ -25,7 +25,7 @@
           ? 'bg-emerald-50 text-emerald-700' 
           : 'bg-rose-50 text-rose-700'"
       >
-        {{ growth.current_percentage >= 0 ? '+' : '' }}{{ growth.current_percentage }}% bln ini
+        {{ Number(growth.current_percentage) > 0 ? '+' : '' }}{{ growth.current_percentage }}% bln ini
       </span>
     </div>
 

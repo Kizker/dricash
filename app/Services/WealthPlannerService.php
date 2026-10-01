@@ -256,9 +256,27 @@ class WealthPlannerService
         // 6. Net Worth & Growth Status
         $currentNetWorth = $startingNetWorth + ($totalIncome - $totalAllExpenses);
         
-        $currentGrowthPercentage = ($startingNetWorth > 0) 
-            ? round((($currentNetWorth - $startingNetWorth) / $startingNetWorth) * 100, 2)
-            : 0;
+        if ($totalIncome > 0) {
+            $currentGrowthPercentage = ($startingNetWorth > 0) 
+                ? round((($currentNetWorth - $startingNetWorth) / $startingNetWorth) * 100, 2)
+                : 0;
+        } else {
+            // Ketika belum ada pemasukan baru di awal bulan:
+            // Selama pengeluaran masih dalam jatah harian yang disiplin,
+            // persentase pertumbuhan kekayaan bersih tetap 0% / stabil (aman)
+            // agar tidak langsung minus merah sebelum pemasukan baru masuk.
+            $expectedMaxExpenseToDate = ($baselineDailyAllowance * max(0, $todayDay - 1)) + $todayDailyBudget;
+            $actualExpenseToDate = $pastExpenses + $spentToday;
+            $isBudgetDisciplined = ($actualExpenseToDate <= max(1, $expectedMaxExpenseToDate));
+
+            if ($isBudgetDisciplined || $currentNetWorth >= $startingNetWorth) {
+                $currentGrowthPercentage = 0.00;
+            } else {
+                $currentGrowthPercentage = ($startingNetWorth > 0)
+                    ? round((($currentNetWorth - $startingNetWorth) / $startingNetWorth) * 100, 2)
+                    : 0;
+            }
+        }
 
         $targetRequiredNetWorth = $startingNetWorth + $targetSavingsAmount;
 
@@ -332,9 +350,14 @@ class WealthPlannerService
                 'surplus' => round($prevMonthSurplus, 2),
             ],
             'cashflow' => [
+                'starting_balance' => round($startingNetWorth, 2),
+                'total_funds' => round($startingNetWorth + $totalIncome, 2),
                 'total_income' => $totalIncome,
                 'total_expenses' => $totalAllExpenses,
-                'net_cashflow' => $totalIncome - $totalAllExpenses,
+                'net_cashflow' => round(($startingNetWorth + $totalIncome) - $totalAllExpenses, 2),
+                'monthly_net_cashflow' => round($totalIncome - $totalAllExpenses, 2),
+                'remaining_balance' => round(($startingNetWorth + $totalIncome) - $totalAllExpenses, 2),
+                'is_surplus' => (($startingNetWorth + $totalIncome) - $totalAllExpenses) >= 0,
                 'savings_target' => $targetSavingsAmount,
                 'projected_surplus' => max(0, $totalIncome - $totalObligationsAmount - $totalDailyExpensesThisMonth),
                 'previous_month_surplus' => round($prevMonthSurplus, 2),

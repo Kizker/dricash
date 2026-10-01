@@ -205,6 +205,9 @@ class DailyBudgetTest extends TestCase
         $this->assertGreaterThan(0, $updatedMetrics['daily_budget']['remaining_today']);
         $this->assertTrue($updatedMetrics['growth']['is_on_track']);
         $this->assertEquals(0, $updatedMetrics['growth']['gap_amount']);
+        $this->assertEquals(0.00, $updatedMetrics['growth']['current_percentage']);
+        $this->assertTrue($updatedMetrics['cashflow']['is_surplus']);
+        $this->assertEquals(10000000 - 13000, $updatedMetrics['cashflow']['net_cashflow']);
     }
 
     public function test_previous_month_surplus_is_computed_and_rolled_over()

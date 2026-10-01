@@ -157,7 +157,7 @@
             </div>
             <div class="text-right shrink-0">
               <span class="text-xs font-bold font-sans text-emerald-600 block">
-                {{ metrics.current_percentage >= 0 ? '+' : '' }}{{ metrics.current_percentage }}%
+                {{ Number(metrics.current_percentage) > 0 ? '+' : '' }}{{ metrics.current_percentage }}%
               </span>
               <span class="text-[10px] text-slate-400 block font-medium">
                 Bulan Ini
@@ -214,7 +214,7 @@
               {{ formatRupiah(metrics.current_net_worth) }}
             </div>
             <div class="text-[10px] text-slate-500 font-sans truncate">
-              {{ metrics.current_percentage >= 0 ? '+' : '' }}{{ metrics.current_percentage }}% bulan ini
+              {{ Number(metrics.current_percentage) > 0 ? '+' : '' }}{{ metrics.current_percentage }}% bulan ini
             </div>
           </div>
 
