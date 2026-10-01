@@ -29,11 +29,21 @@ class MonthlyObligationController extends Controller
         $metrics = $this->wealthService->getDashboardMetrics($user, $month, $year);
         $categories = $this->wealthService->getActiveCategories($user);
 
+        // Fetch payment records for this specific month & year
+        $payments = MonthlyObligationPayment::where('user_id', $user->id)
+            ->where('period_month', $month)
+            ->where('period_year', $year)
+            ->get()
+            ->keyBy('monthly_obligation_id');
+
         $obligations = MonthlyObligation::with(['category'])
             ->where('user_id', $user->id)
             ->orderBy('due_day', 'asc')
             ->get()
-            ->map(function ($ob) {
+            ->map(function ($ob) use ($payments) {
+                $payment = $payments->get($ob->id);
+                $isPaid = (bool) ($payment?->is_paid ?? false);
+
                 $totalInst = $ob->total_installments ? (int) $ob->total_installments : null;
                 $paidInst = (int) ($ob->paid_installments ?? 0);
                 $remainingInst = $totalInst ? max(0, $totalInst - $paidInst) : null;
@@ -52,6 +62,10 @@ class MonthlyObligationController extends Controller
                     'is_installment' => !is_null($totalInst) || (str_contains(strtolower($ob->category?->name ?? ''), 'cicilan')),
                     'is_active' => (bool) $ob->is_active,
                     'notes' => $ob->notes,
+                    'is_paid' => $isPaid,
+                    'paid_at' => $payment?->paid_at ? $payment->paid_at->translatedFormat('d M Y') : null,
+                    'paid_time' => $payment?->paid_at ? $payment->paid_at->format('H:i') : null,
+                    'paid_date' => $payment?->paid_at ? $payment->paid_at->format('Y-m-d') : null,
                     'category' => $ob->category ? [
                         'id' => $ob->category->id,
                         'name' => $ob->category->name,
@@ -162,25 +176,69 @@ class MonthlyObligationController extends Controller
             // Increment paid_installments jika ada target total_installments
             if ($obligation->total_installments && $obligation->paid_installments < $obligation->total_installments) {
                 $obligation->increment('paid_installments');
+                $obligation->refresh();
             }
 
-            // Create expense transaction
-            Transaction::updateOrCreate(
-                [
-                    'user_id' => $request->user()->id,
-                    'monthly_obligation_id' => $obligation->id,
-                    'transaction_date' => Carbon::now()->format('Y-m-d'),
-                ],
-                [
-                    'category_id' => $obligation->category_id,
+            // Hitung tanggal transaksi sesuai periode bulan & tanggal jatuh tempo yang ditandai
+            $daysInPeriodMonth = Carbon::createFromDate($year, $month, 1)->daysInMonth;
+            $targetDay = min((int) $obligation->due_day, $daysInPeriodMonth);
+            $txDate = ($month === (int) $now->format('m') && $year === (int) $now->format('Y'))
+                ? $now->format('Y-m-d')
+                : Carbon::createFromDate($year, $month, $targetDay)->format('Y-m-d');
+
+            // Format deskripsi transaksi dengan nomor cicilan bulanan
+            if ($obligation->total_installments) {
+                $txDescription = "Pembayaran {$obligation->name} (Cicilan ke-{$obligation->paid_installments} dari {$obligation->total_installments}x)";
+            } else {
+                $txDescription = "Pembayaran Kewajiban: {$obligation->name}";
+            }
+
+            // Tentukan kategori (fallback ke Cicilan & Pinjaman jika belum terpasang)
+            $catId = $obligation->category_id;
+            if (!$catId) {
+                $catId = Category::where('user_id', $request->user()->id)
+                    ->where(function ($q) {
+                        $q->where('name', 'like', '%cicil%')
+                          ->orWhere('name', 'like', '%pinjam%')
+                          ->orWhere('name', 'like', '%kewajiban%');
+                    })
+                    ->value('id');
+            }
+
+            // Create or update expense transaction for this obligation and month/year
+            $tx = Transaction::where('user_id', $request->user()->id)
+                ->where('monthly_obligation_id', $obligation->id)
+                ->whereMonth('transaction_date', $month)
+                ->whereYear('transaction_date', $year)
+                ->first();
+
+            if ($tx) {
+                $tx->update([
+                    'category_id' => $catId,
                     'type' => 'expense',
                     'amount' => $obligation->amount,
-                    'description' => "Pembayaran Kewajiban: {$obligation->name}",
+                    'description' => $txDescription,
+                    'payment_method' => $tx->payment_method ?: 'Bank',
+                    'transaction_date' => $txDate,
+                ]);
+            } else {
+                Transaction::create([
+                    'user_id' => $request->user()->id,
+                    'monthly_obligation_id' => $obligation->id,
+                    'category_id' => $catId,
+                    'type' => 'expense',
+                    'amount' => $obligation->amount,
+                    'description' => $txDescription,
                     'payment_method' => 'Bank',
-                ]
-            );
+                    'transaction_date' => $txDate,
+                ]);
+            }
 
-            $msg = "'{$obligation->name}' ditandai LUNAS dan dicatat ke pengeluaran.";
+            WealthPlannerService::clearUserCache($request->user()->id);
+
+            $msg = $obligation->total_installments
+                ? "'{$obligation->name}' (Cicilan ke-{$obligation->paid_installments}/{$obligation->total_installments}x) ditandai LUNAS dan dicatat ke pengeluaran."
+                : "'{$obligation->name}' ditandai LUNAS dan dicatat ke pengeluaran.";
         } else {
             $payment->is_paid = false;
             $payment->paid_amount = 0.00;
@@ -190,6 +248,7 @@ class MonthlyObligationController extends Controller
             // Decrement paid_installments jika sebelumnya bertambah
             if ($obligation->total_installments && $obligation->paid_installments > 0) {
                 $obligation->decrement('paid_installments');
+                $obligation->refresh();
             }
 
             // Remove corresponding transaction for this period
@@ -197,9 +256,11 @@ class MonthlyObligationController extends Controller
                 ->where('monthly_obligation_id', $obligation->id)
                 ->whereMonth('transaction_date', $month)
                 ->whereYear('transaction_date', $year)
-                ->delete();
+                ->forceDelete();
 
-            $msg = "'{$obligation->name}' dikembalikan ke status BELUM BAYAR (Dana Terkunci).";
+            WealthPlannerService::clearUserCache($request->user()->id);
+
+            $msg = "'{$obligation->name}' dikembalikan ke status BELUM BAYAR (Dana Terkunci) dan pengeluaran terkait dihapus.";
         }
 
         return back()->with('success', $msg);

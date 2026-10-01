@@ -201,12 +201,25 @@ class FinancialWorkflowTest extends TestCase
         $cicilan->refresh();
         $this->assertEquals(4, $cicilan->paid_installments);
 
+        // Expense transaction created with installment details
+        $this->assertDatabaseHas('transactions', [
+            'monthly_obligation_id' => $cicilan->id,
+            'type' => 'expense',
+            'amount' => 1000000.00,
+            'description' => "Pembayaran {$cicilan->name} (Cicilan ke-4 dari 12x)",
+        ]);
+
         // Toggle back to unpaid -> paid_installments decrements back to 3
         $toggleBackRes = $this->actingAs($this->user)->post("/obligations/{$cicilan->id}/toggle");
         $toggleBackRes->assertRedirect();
 
         $cicilan->refresh();
         $this->assertEquals(3, $cicilan->paid_installments);
+
+        // Expense transaction deleted
+        $this->assertDatabaseMissing('transactions', [
+            'monthly_obligation_id' => $cicilan->id,
+        ]);
     }
 
     public function test_user_can_update_growth_target()
